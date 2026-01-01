@@ -13,7 +13,59 @@ interface QuestionDraft {
   correctAnswer: string;
 }
 
+type SetType = 'questions' | 'flashcards' | 'vocabulary';
+
+const setTypeInfo: Record<SetType, { title: string; description: string; icon: React.ReactNode; questionLabel: string; answerLabel: string; questionPlaceholder: string; answerPlaceholder: string }> = {
+  questions: {
+    title: 'Question & Answer',
+    description: 'Multiple choice questions with answer choices',
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    ),
+    questionLabel: 'Question & Choices',
+    answerLabel: 'Correct Answer(s)',
+    questionPlaceholder: 'Paste your question with all answer choices here...',
+    answerPlaceholder: 'e.g., A or A,C for multiple'
+  },
+  flashcards: {
+    title: 'Flashcards',
+    description: 'Simple front and back cards for memorization',
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+    ),
+    questionLabel: 'Front (Term/Question)',
+    answerLabel: 'Back (Definition/Answer)',
+    questionPlaceholder: 'Enter the term or question...',
+    answerPlaceholder: 'Enter the definition or answer...'
+  },
+  vocabulary: {
+    title: 'Vocabulary',
+    description: 'Words with definitions, great for language learning',
+    icon: (
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        <line x1="8" y1="6" x2="16" y2="6"/>
+        <line x1="8" y1="10" x2="14" y2="10"/>
+      </svg>
+    ),
+    questionLabel: 'Word',
+    answerLabel: 'Definition',
+    questionPlaceholder: 'Enter the word...',
+    answerPlaceholder: 'Enter the definition...'
+  }
+};
+
 export default function CreateEditSet({ existingSet, onSave, onCancel }: Props) {
+  const [setType, setSetType] = useState<SetType | null>(existingSet ? 'questions' : null);
   const [title, setTitle] = useState(existingSet?.title || '');
   const [questionCount, setQuestionCount] = useState(
     existingSet?.questions.length || 5
@@ -130,17 +182,67 @@ export default function CreateEditSet({ existingSet, onSave, onCancel }: Props) 
 
   const presetCounts = [5, 10, 15, 20, 25, 30, 40, 50];
 
+  const currentTypeInfo = setType ? setTypeInfo[setType] : null;
+
+  // Show type selection for new sets
+  if (!existingSet && !setType) {
+    return (
+      <div className="create-edit-set">
+        <div className="form-header">
+          <button className="btn-back" onClick={onCancel}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back
+          </button>
+          <h2>Create Study Set</h2>
+          <div></div>
+        </div>
+
+        <div className="type-selection">
+          <h3>What type of set do you want to create?</h3>
+          <p className="type-subtitle">Choose the format that best fits your content</p>
+
+          <div className="type-cards">
+            {(Object.keys(setTypeInfo) as SetType[]).map((type) => {
+              const info = setTypeInfo[type];
+              return (
+                <button
+                  key={type}
+                  className="type-card"
+                  onClick={() => setSetType(type)}
+                >
+                  <div className={`type-icon ${type}`}>
+                    {info.icon}
+                  </div>
+                  <div className="type-info">
+                    <h4>{info.title}</h4>
+                    <p>{info.description}</p>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="create-edit-set">
       <div className="form-header">
-        <button className="btn-back" onClick={onCancel}>
+        <button className="btn-back" onClick={existingSet ? onCancel : () => setSetType(null)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="19" y1="12" x2="5" y2="12"/>
             <polyline points="12 19 5 12 12 5"/>
           </svg>
           Back
         </button>
-        <h2>{existingSet ? 'Edit Study Set' : 'Create Study Set'}</h2>
+        <h2>{existingSet ? 'Edit Study Set' : `Create ${currentTypeInfo?.title || 'Study Set'}`}</h2>
         <div></div>
       </div>
 
@@ -157,7 +259,7 @@ export default function CreateEditSet({ existingSet, onSave, onCancel }: Props) 
         </div>
 
         <div className="form-row">
-          <label>Number of Questions</label>
+          <label>Number of Cards</label>
           <div className="count-selector">
             <select
               value={isCustom ? 'custom' : questionCount}
@@ -191,22 +293,31 @@ export default function CreateEditSet({ existingSet, onSave, onCancel }: Props) 
               <div className="question-number">{index + 1}</div>
               <div className="question-inputs">
                 <div className="input-group">
-                  <label>Question & Choices</label>
+                  <label>{currentTypeInfo?.questionLabel || 'Question'}</label>
                   <textarea
                     value={q.questionText}
                     onChange={(e) => updateQuestion(index, 'questionText', e.target.value)}
-                    placeholder="Paste your question with all answer choices here..."
-                    rows={4}
+                    placeholder={currentTypeInfo?.questionPlaceholder || 'Enter question...'}
+                    rows={setType === 'questions' ? 4 : 2}
                   />
                 </div>
                 <div className="input-group answer-group">
-                  <label>Correct Answer(s)</label>
-                  <input
-                    type="text"
-                    value={q.correctAnswer}
-                    onChange={(e) => updateQuestion(index, 'correctAnswer', e.target.value)}
-                    placeholder="e.g., A or A,C for multiple"
-                  />
+                  <label>{currentTypeInfo?.answerLabel || 'Answer'}</label>
+                  {setType === 'questions' ? (
+                    <input
+                      type="text"
+                      value={q.correctAnswer}
+                      onChange={(e) => updateQuestion(index, 'correctAnswer', e.target.value)}
+                      placeholder={currentTypeInfo?.answerPlaceholder || 'Enter answer...'}
+                    />
+                  ) : (
+                    <textarea
+                      value={q.correctAnswer}
+                      onChange={(e) => updateQuestion(index, 'correctAnswer', e.target.value)}
+                      placeholder={currentTypeInfo?.answerPlaceholder || 'Enter answer...'}
+                      rows={2}
+                    />
+                  )}
                 </div>
               </div>
             </div>
