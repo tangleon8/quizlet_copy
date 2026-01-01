@@ -3434,3 +3434,97 @@ body {
 .config-actions button {
   flex: 1;
 }
+
+/* ===== MOBILE APP STYLES (Capacitor) ===== */
+/* Apply safe areas to header */
+.App-header {
+  padding-top: var(--safe-area-inset-top);
+  padding-left: calc(1.5rem + var(--safe-area-inset-left));
+  padding-right: calc(1.5rem + var(--safe-area-inset-right));
+}
+
+/* Apply safe areas to main content */
+.App-main {
+  padding-bottom: calc(2rem + var(--safe-area-inset-bottom));
+  padding-left: calc(2rem + var(--safe-area-inset-left));
+  padding-right: calc(2rem + var(--safe-area-inset-right));
+}
+
+/* Sidebar safe area */
+.sidebar {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  button, .btn, .set-card, .type-card, .mode-button {
+    min-height: 44px;
+  }
+
+  /* Remove hover states on touch devices */
+  .set-card:hover,
+  .type-card:hover,
+  .mode-button:hover,
+  .btn:hover {
+    transform: none;
+  }
+
+  /* Active states for touch feedback */
+  .set-card:active,
+  .type-card:active,
+  .mode-button:active,
+  button:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  /* Prevent text selection on interactive elements */
+  button, .set-card, .type-card, .mode-button, .choice-option, .flashcard {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smoother scrolling */
+  .App-main, .sidebar, .questions-form {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Hide sidebar on mobile by default */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: var(--header-height);
+    bottom: 0;
+    z-index: 99;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  /* Overlay when sidebar is open */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 98;
+  }
+
+  .sidebar.open + .sidebar-overlay {
+    display: block;
+  }
+}
