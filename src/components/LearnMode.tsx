@@ -138,7 +138,7 @@ export default function LearnMode({ studySet, onBack }: Props) {
   // Parse choices from question text
   const parseChoices = (text: string): { questionPart: string; choices: { letter: string; text: string }[] } => {
     const choices: { letter: string; text: string }[] = [];
-    const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
+    const choiceRegex = /([A-J])[.)]\s*([\s\S]*?)(?=(?:[A-J][.)]\s)|$)/gi;
 
     let match;
     const matches: { letter: string; text: string; index: number }[] = [];
