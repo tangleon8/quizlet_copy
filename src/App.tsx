@@ -213,70 +213,231 @@ function AppContent() {
     );
   }
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Get recent sets for sidebar
+  const recentSets = [...sets]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 5);
+
   return (
-    <div className="App">
+    <div className="App app-with-sidebar">
+      {/* Header */}
       <header className="App-header">
-        <h1 onClick={() => setView('home')} style={{ cursor: 'pointer' }}>Quizlet</h1>
-        <div className="user-info">
-          <span>Hi, {user.name}</span>
-          <button className="btn-settings" onClick={handleOpenSettings} title="Settings">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        <div className="header-left">
+          <button className="btn-menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
           </button>
-          <button className="btn-logout" onClick={logout}>Log out</button>
+          <div className="header-brand" onClick={() => setView('home')}>
+            <img src="/Questly.png" alt="Questly" className="header-logo" />
+            <span className="header-title">Questly</span>
+          </div>
+        </div>
+
+        <div className="header-center">
+          <div className="header-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search your sets..." />
+          </div>
+        </div>
+
+        <div className="header-right">
+          <button className="btn-header-action" onClick={handleBulkImport} title="Import">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </button>
+          <button className="btn-header-action" onClick={handleCreateNew} title="Create">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+          <button className="btn-header-action" onClick={handleOpenSettings} title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </button>
+          <div className="header-user">
+            <div className="user-avatar">{user.name.charAt(0).toUpperCase()}</div>
+            <button className="btn-logout-small" onClick={logout}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
-      <main className="App-main">
-        {loadingSets && view === 'home' && (
-          <div className="loading-sets">Loading your sets...</div>
-        )}
-        {view === 'home' && !loadingSets && (
-          <Home
-            sets={sets}
-            onCreateNew={handleCreateNew}
-            onBulkImport={handleBulkImport}
-            onSelectSet={handleSelectSet}
-            onDeleteSet={handleDeleteSet}
-            lastStudyMap={lastStudyMap}
-          />
-        )}
-        {(view === 'create' || view === 'edit') && (
-          <CreateEditSet
-            existingSet={currentSet}
-            onSave={handleSaveSet}
-            onCancel={handleBack}
-          />
-        )}
-        {view === 'import' && (
-          <BulkImport
-            onSave={handleSaveSet}
-            onCancel={handleBack}
-          />
-        )}
-        {view === 'flashcards' && (studySubset || currentSet) && (
-          <FlashcardMode studySet={studySubset || currentSet!} onBack={handleBack} />
-        )}
-        {view === 'learn' && (studySubset || currentSet) && (
-          <LearnMode studySet={studySubset || currentSet!} onBack={handleBack} />
-        )}
-        {view === 'quiz' && (studySubset || currentSet) && (
-          <QuizMode studySet={studySubset || currentSet!} onBack={handleBack} />
-        )}
-        {view === 'match' && (studySubset || currentSet) && (
-          <MatchMode studySet={studySubset || currentSet!} onBack={handleBack} />
-        )}
-        {view === 'view' && currentSet && (
-          <SetView studySet={currentSet} onBack={handleBack} />
-        )}
-        {view === 'games' && (studySubset || currentSet) && (
-          <GamesMode studySet={studySubset || currentSet!} onBack={handleBack} />
-        )}
-        {view === 'settings' && (
-          <Settings onBack={handleBack} />
-        )}
-      </main>
+
+      <div className="app-body">
+        {/* Sidebar */}
+        <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+          <nav className="sidebar-nav">
+            <button
+              className={`nav-item ${view === 'home' ? 'active' : ''}`}
+              onClick={() => setView('home')}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span>Home</span>
+            </button>
+            <button className="nav-item" onClick={handleCreateNew}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <span>Create Set</span>
+            </button>
+            <button className="nav-item" onClick={handleBulkImport}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              <span>Import PDF</span>
+            </button>
+          </nav>
+
+          <div className="sidebar-section">
+            <h4>Your Sets</h4>
+            <div className="sidebar-sets">
+              {recentSets.map((set) => (
+                <button
+                  key={set.id}
+                  className="sidebar-set-item"
+                  onClick={() => handleSelectSet(set, 'view')}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  </svg>
+                  <span>{set.title}</span>
+                  <small>{set.questions.length}</small>
+                </button>
+              ))}
+              {sets.length > 5 && (
+                <button className="sidebar-set-item see-all" onClick={() => setView('home')}>
+                  <span>See all {sets.length} sets</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h4>Quick Actions</h4>
+            <div className="quick-actions">
+              {sets.length > 0 && (
+                <>
+                  <button
+                    className="quick-action"
+                    onClick={() => sets[0] && handleSelectSet(sets[0], 'flashcards')}
+                  >
+                    <div className="quick-icon flashcards">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                      </svg>
+                    </div>
+                    <span>Flashcards</span>
+                  </button>
+                  <button
+                    className="quick-action"
+                    onClick={() => sets[0] && handleSelectSet(sets[0], 'learn')}
+                  >
+                    <div className="quick-icon learn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                      </svg>
+                    </div>
+                    <span>Learn</span>
+                  </button>
+                  <button
+                    className="quick-action"
+                    onClick={() => sets[0] && handleSelectSet(sets[0], 'games')}
+                  >
+                    <div className="quick-icon games">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polygon points="10 8 16 12 10 16 10 8"/>
+                      </svg>
+                    </div>
+                    <span>Games</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="App-main">
+          {loadingSets && view === 'home' && (
+            <div className="loading-sets">Loading your sets...</div>
+          )}
+          {view === 'home' && !loadingSets && (
+            <Home
+              sets={sets}
+              onCreateNew={handleCreateNew}
+              onBulkImport={handleBulkImport}
+              onSelectSet={handleSelectSet}
+              onDeleteSet={handleDeleteSet}
+              lastStudyMap={lastStudyMap}
+            />
+          )}
+          {(view === 'create' || view === 'edit') && (
+            <CreateEditSet
+              existingSet={currentSet}
+              onSave={handleSaveSet}
+              onCancel={handleBack}
+            />
+          )}
+          {view === 'import' && (
+            <BulkImport
+              onSave={handleSaveSet}
+              onCancel={handleBack}
+            />
+          )}
+          {view === 'flashcards' && (studySubset || currentSet) && (
+            <FlashcardMode studySet={studySubset || currentSet!} onBack={handleBack} />
+          )}
+          {view === 'learn' && (studySubset || currentSet) && (
+            <LearnMode studySet={studySubset || currentSet!} onBack={handleBack} />
+          )}
+          {view === 'quiz' && (studySubset || currentSet) && (
+            <QuizMode studySet={studySubset || currentSet!} onBack={handleBack} />
+          )}
+          {view === 'match' && (studySubset || currentSet) && (
+            <MatchMode studySet={studySubset || currentSet!} onBack={handleBack} />
+          )}
+          {view === 'view' && currentSet && (
+            <SetView studySet={currentSet} onBack={handleBack} />
+          )}
+          {view === 'games' && (studySubset || currentSet) && (
+            <GamesMode studySet={studySubset || currentSet!} onBack={handleBack} />
+          )}
+          {view === 'settings' && (
+            <Settings onBack={handleBack} />
+          )}
+        </main>
+      </div>
 
       {showStudyConfig && currentSet && pendingMode && (
         <StudyConfig

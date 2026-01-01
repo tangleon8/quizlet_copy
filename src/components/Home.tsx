@@ -66,28 +66,105 @@ export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onD
     .sort((a, b) => (lastStudyMap[b.id]?.timestamp || 0) - (lastStudyMap[a.id]?.timestamp || 0))
     .slice(0, 3);
 
+  // Get a random set for suggestions
+  const getRandomSet = () => sets.length > 0 ? sets[Math.floor(Math.random() * sets.length)] : null;
+  const suggestedSet = getRandomSet();
+
   return (
     <div className="home">
-      <div className="home-header">
-        <h2>Your library</h2>
-        <div className="header-buttons">
-          <button className="btn-import" onClick={onBulkImport}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Import
-          </button>
-          <button className="btn-create" onClick={onCreateNew}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Create
-          </button>
+      {/* Welcome Banner */}
+      <div className="welcome-banner">
+        <div className="welcome-content">
+          <h1>Welcome back!</h1>
+          <p>Ready to continue learning? Pick up where you left off or try something new.</p>
+        </div>
+        <div className="welcome-illustration">
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+            <circle cx="60" cy="60" r="50" fill="#edefff"/>
+            <path d="M40 45h40v35a5 5 0 01-5 5H45a5 5 0 01-5-5V45z" fill="#4255ff"/>
+            <path d="M45 35h30a5 5 0 015 5v5H40v-5a5 5 0 015-5z" fill="#423ed8"/>
+            <rect x="50" y="55" width="20" height="3" rx="1.5" fill="white"/>
+            <rect x="50" y="63" width="15" height="3" rx="1.5" fill="white" opacity="0.7"/>
+            <rect x="50" y="71" width="18" height="3" rx="1.5" fill="white" opacity="0.5"/>
+          </svg>
         </div>
       </div>
+
+      {/* Suggestions */}
+      {sets.length > 0 && (
+        <div className="suggestions-section">
+          <h3>Suggested for you</h3>
+          <div className="suggestion-cards">
+            {suggestedSet && (
+              <>
+                <div className="suggestion-card" onClick={() => onSelectSet(suggestedSet, 'flashcards')}>
+                  <div className="suggestion-icon flashcards">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2"/>
+                      <line x1="8" y1="21" x2="16" y2="21"/>
+                      <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                  </div>
+                  <div className="suggestion-content">
+                    <span className="suggestion-action">Review with flashcards</span>
+                    <span className="suggestion-set">{suggestedSet.title}</span>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
+                <div className="suggestion-card" onClick={() => onSelectSet(suggestedSet, 'learn')}>
+                  <div className="suggestion-icon learn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                  </div>
+                  <div className="suggestion-content">
+                    <span className="suggestion-action">Practice with Learn mode</span>
+                    <span className="suggestion-set">{suggestedSet.title}</span>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
+                <div className="suggestion-card" onClick={() => onSelectSet(suggestedSet, 'games')}>
+                  <div className="suggestion-icon games">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polygon points="10 8 16 12 10 16 10 8"/>
+                    </svg>
+                  </div>
+                  <div className="suggestion-content">
+                    <span className="suggestion-action">Play a quick game</span>
+                    <span className="suggestion-set">{suggestedSet.title}</span>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
+                <div className="suggestion-card" onClick={() => onSelectSet(suggestedSet, 'quiz')}>
+                  <div className="suggestion-icon quiz">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                  </div>
+                  <div className="suggestion-content">
+                    <span className="suggestion-action">Take a practice test</span>
+                    <span className="suggestion-set">{suggestedSet.title}</span>
+                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {sets.length === 0 ? (
         <div className="empty-state">
