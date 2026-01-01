@@ -35,6 +35,7 @@ function AppContent() {
   const [lastStudyMap, setLastStudyMap] = useState<Record<string, LastStudyInfo>>({});
   const [showStudyConfig, setShowStudyConfig] = useState(false);
   const [pendingMode, setPendingMode] = useState<StudyMode | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Load last study info from localStorage
   useEffect(() => {
@@ -212,8 +213,6 @@ function AppContent() {
       </div>
     );
   }
-
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Get recent sets for sidebar
   const recentSets = [...sets]
