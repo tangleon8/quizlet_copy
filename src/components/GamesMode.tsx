@@ -78,7 +78,7 @@ export default function GamesMode({ studySet, onBack }: Props) {
 
   // Parse question to get just the question part
   const parseQuestion = (text: string): string => {
-    const choiceMatch = text.match(/[A-E][.)]\s/);
+    const choiceMatch = text.match(/[A-J][.)]\s/);
     let questionPart = text;
     if (choiceMatch && choiceMatch.index) {
       questionPart = text.substring(0, choiceMatch.index);
@@ -89,7 +89,7 @@ export default function GamesMode({ studySet, onBack }: Props) {
   // Parse choices from question
   const parseChoices = (text: string): { letter: string; text: string }[] => {
     const choices: { letter: string; text: string }[] = [];
-    const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
+    const choiceRegex = /([A-J])[.)]\s*([\s\S]*?)(?=(?:[A-J][.)]\s)|$)/gi;
     let match;
     const matches: { letter: string; text: string; index: number }[] = [];
 

@@ -18,7 +18,7 @@ export default function FlashcardMode({ studySet, onBack }: Props) {
     const choices: { letter: string; text: string }[] = [];
 
     // Try to find choices using regex that matches A. B. C. D. E. or A) B) C) D) E) patterns
-    const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
+    const choiceRegex = /([A-J])[.)]\s*([\s\S]*?)(?=(?:[A-J][.)]\s)|$)/gi;
 
     let match;
     const matches: { letter: string; text: string; index: number }[] = [];

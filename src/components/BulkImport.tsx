@@ -45,17 +45,17 @@ export default function BulkImport({ onSave, onCancel }: Props) {
       const answerPart = parts[i + 1];
 
       // Get all answer letters (supports multiple like "A, C" or "AC" or "DE" or "A and C")
-      const answerMatch = answerPart.match(/^([A-E]+(?:\s*[,&and\s]+\s*[A-E])*)/i);
+      const answerMatch = answerPart.match(/^([A-J]+(?:\s*[,&and\s]+\s*[A-J])*)/i);
       if (!answerMatch) continue;
 
       const answerRaw = answerMatch[1].toUpperCase();
-      const answers = answerRaw.match(/[A-E]/g);
+      const answers = answerRaw.match(/[A-J]/g);
       const correctAnswer = answers ? Array.from(new Set(answers)).join(',') : answerRaw;
 
       // If this isn't the first block, clean up from previous answer
       if (i > 0) {
         // Remove leading answer letters and explanation remnants from previous question
-        questionBlock = questionBlock.replace(/^[A-E]+\s*/i, '').trim();
+        questionBlock = questionBlock.replace(/^[A-J]+\s*/i, '').trim();
       }
 
       // Remove "Question: X" prefix if present

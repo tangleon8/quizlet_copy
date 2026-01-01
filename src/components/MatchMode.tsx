@@ -26,7 +26,7 @@ export default function MatchMode({ studySet, onBack }: Props) {
   // Works with both line-separated and inline formats (for PDF imports)
   const parseQuestion = (text: string): string => {
     // Find the first choice pattern to know where the question ends
-    const choiceMatch = text.match(/[A-E][.)]\s/);
+    const choiceMatch = text.match(/[A-J][.)]\s/);
 
     let questionPart = text;
     if (choiceMatch && choiceMatch.index) {
