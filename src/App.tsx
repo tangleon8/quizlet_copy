@@ -386,6 +386,11 @@ function AppContent() {
           </div>
         </aside>
 
+        {/* Sidebar overlay for mobile */}
+        {sidebarOpen && (
+          <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        )}
+
         {/* Main Content */}
         <main className="App-main">
           {loadingSets && view === 'home' && (
