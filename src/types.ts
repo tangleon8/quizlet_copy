@@ -30,4 +30,4 @@ export interface StudyProgress {
   completed: boolean;
 }
 
-export type AppView = 'home' | 'create' | 'edit' | 'import' | 'flashcards' | 'learn' | 'quiz' | 'match' | 'view' | 'games';
+export type AppView = 'home' | 'create' | 'edit' | 'import' | 'flashcards' | 'learn' | 'quiz' | 'match' | 'view' | 'games' | 'settings';

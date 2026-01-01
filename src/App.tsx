@@ -13,6 +13,8 @@ import QuizMode from './components/QuizMode';
 import MatchMode from './components/MatchMode';
 import SetView from './components/SetView';
 import GamesMode from './components/GamesMode';
+import Settings from './components/Settings';
+import StudyConfig from './components/StudyConfig';
 
 type StudyMode = 'flashcards' | 'learn' | 'quiz' | 'match' | 'games';
 
@@ -21,13 +23,18 @@ interface LastStudyInfo {
   timestamp: number;
 }
 
+const SETTINGS_KEY = 'study_settings';
+
 function AppContent() {
   const { user, loading, logout } = useAuth();
   const [sets, setSets] = useState<StudySet[]>([]);
   const [view, setView] = useState<AppView>('home');
   const [currentSet, setCurrentSet] = useState<StudySet | null>(null);
+  const [studySubset, setStudySubset] = useState<StudySet | null>(null);
   const [loadingSets, setLoadingSets] = useState(false);
   const [lastStudyMap, setLastStudyMap] = useState<Record<string, LastStudyInfo>>({});
+  const [showStudyConfig, setShowStudyConfig] = useState(false);
+  const [pendingMode, setPendingMode] = useState<StudyMode | null>(null);
 
   // Load last study info from localStorage
   useEffect(() => {
@@ -71,13 +78,32 @@ function AppContent() {
     setView('import');
   };
 
+  const shouldShowConfig = (): boolean => {
+    try {
+      const settingsStr = localStorage.getItem(SETTINGS_KEY);
+      if (settingsStr) {
+        const settings = JSON.parse(settingsStr);
+        return settings.showConfigBeforeStudy !== false;
+      }
+    } catch (e) {
+      // Default to showing config
+    }
+    return true;
+  };
+
   const handleSelectSet = (set: StudySet, mode: 'flashcards' | 'learn' | 'quiz' | 'match' | 'edit' | 'view' | 'games') => {
     setCurrentSet(set);
-    setView(mode);
 
-    // Track last study mode (only for actual study modes, not edit/view)
+    // For edit/view, go directly without config
+    if (mode === 'edit' || mode === 'view') {
+      setView(mode);
+      return;
+    }
+
+    // For study modes, check if we should show config
     const studyModes: StudyMode[] = ['flashcards', 'learn', 'quiz', 'match', 'games'];
     if (studyModes.includes(mode as StudyMode)) {
+      // Track last study mode
       const newMap = {
         ...lastStudyMap,
         [set.id]: {
@@ -87,7 +113,31 @@ function AppContent() {
       };
       setLastStudyMap(newMap);
       localStorage.setItem('lastStudyMap', JSON.stringify(newMap));
+
+      // Check if we should show config (only for sets with more than 20 questions)
+      if (shouldShowConfig() && set.questions.length > 20) {
+        setPendingMode(mode as StudyMode);
+        setShowStudyConfig(true);
+      } else {
+        setStudySubset(set);
+        setView(mode);
+      }
     }
+  };
+
+  const handleStudyConfigStart = (subset: StudySet) => {
+    setStudySubset(subset);
+    setShowStudyConfig(false);
+    if (pendingMode) {
+      setView(pendingMode);
+    }
+    setPendingMode(null);
+  };
+
+  const handleStudyConfigCancel = () => {
+    setShowStudyConfig(false);
+    setPendingMode(null);
+    setCurrentSet(null);
   };
 
   const handleDeleteSet = async (id: string) => {
@@ -133,6 +183,11 @@ function AppContent() {
   const handleBack = () => {
     setView('home');
     setCurrentSet(null);
+    setStudySubset(null);
+  };
+
+  const handleOpenSettings = () => {
+    setView('settings');
   };
 
   // Show loading state
@@ -164,6 +219,12 @@ function AppContent() {
         <h1 onClick={() => setView('home')} style={{ cursor: 'pointer' }}>Quizlet</h1>
         <div className="user-info">
           <span>Hi, {user.name}</span>
+          <button className="btn-settings" onClick={handleOpenSettings} title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
           <button className="btn-logout" onClick={logout}>Log out</button>
         </div>
       </header>
@@ -194,25 +255,37 @@ function AppContent() {
             onCancel={handleBack}
           />
         )}
-        {view === 'flashcards' && currentSet && (
-          <FlashcardMode studySet={currentSet} onBack={handleBack} />
+        {view === 'flashcards' && (studySubset || currentSet) && (
+          <FlashcardMode studySet={studySubset || currentSet!} onBack={handleBack} />
         )}
-        {view === 'learn' && currentSet && (
-          <LearnMode studySet={currentSet} onBack={handleBack} />
+        {view === 'learn' && (studySubset || currentSet) && (
+          <LearnMode studySet={studySubset || currentSet!} onBack={handleBack} />
         )}
-        {view === 'quiz' && currentSet && (
-          <QuizMode studySet={currentSet} onBack={handleBack} />
+        {view === 'quiz' && (studySubset || currentSet) && (
+          <QuizMode studySet={studySubset || currentSet!} onBack={handleBack} />
         )}
-        {view === 'match' && currentSet && (
-          <MatchMode studySet={currentSet} onBack={handleBack} />
+        {view === 'match' && (studySubset || currentSet) && (
+          <MatchMode studySet={studySubset || currentSet!} onBack={handleBack} />
         )}
         {view === 'view' && currentSet && (
           <SetView studySet={currentSet} onBack={handleBack} />
         )}
-        {view === 'games' && currentSet && (
-          <GamesMode studySet={currentSet} onBack={handleBack} />
+        {view === 'games' && (studySubset || currentSet) && (
+          <GamesMode studySet={studySubset || currentSet!} onBack={handleBack} />
+        )}
+        {view === 'settings' && (
+          <Settings onBack={handleBack} />
         )}
       </main>
+
+      {showStudyConfig && currentSet && pendingMode && (
+        <StudyConfig
+          studySet={currentSet}
+          mode={pendingMode}
+          onStart={handleStudyConfigStart}
+          onCancel={handleStudyConfigCancel}
+        />
+      )}
     </div>
   );
 }
