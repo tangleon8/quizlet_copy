@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
 
 interface Props {
   studySet: StudySet;
   onBack: () => void;
 }
+
+interface SavedLearnProgress {
+  currentIndex: number;
+  wrongIndices: number[];
+  isReviewMode: boolean;
+  reviewIndex: number;
+  masteredCount: number;
+  timestamp: number;
+}
+
+const STORAGE_KEY_PREFIX = 'learn_progress_';
 
 export default function LearnMode({ studySet, onBack }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -16,6 +27,64 @@ export default function LearnMode({ studySet, onBack }: Props) {
   const [reviewIndex, setReviewIndex] = useState(0);
   const [masteredCount, setMasteredCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [savedProgress, setSavedProgress] = useState<SavedLearnProgress | null>(null);
+
+  const storageKey = `${STORAGE_KEY_PREFIX}${studySet.id}`;
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const progress: SavedLearnProgress = JSON.parse(saved);
+        // Check if progress is valid and not too old (24 hours)
+        const isRecent = Date.now() - progress.timestamp < 24 * 60 * 60 * 1000;
+        const isValid = progress.currentIndex < studySet.questions.length;
+
+        if (isValid && isRecent && (progress.currentIndex > 0 || progress.masteredCount > 0)) {
+          setSavedProgress(progress);
+          setShowResumePrompt(true);
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      } catch (e) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+  }, [storageKey, studySet.questions.length]);
+
+  // Save progress whenever state changes
+  useEffect(() => {
+    if (!isComplete && !showResumePrompt && (currentIndex > 0 || masteredCount > 0)) {
+      const progress: SavedLearnProgress = {
+        currentIndex,
+        wrongIndices,
+        isReviewMode,
+        reviewIndex,
+        masteredCount,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(storageKey, JSON.stringify(progress));
+    }
+  }, [currentIndex, wrongIndices, isReviewMode, reviewIndex, masteredCount, isComplete, showResumePrompt, storageKey]);
+
+  const resumeProgress = () => {
+    if (savedProgress) {
+      setCurrentIndex(savedProgress.currentIndex);
+      setWrongIndices(savedProgress.wrongIndices);
+      setIsReviewMode(savedProgress.isReviewMode);
+      setReviewIndex(savedProgress.reviewIndex);
+      setMasteredCount(savedProgress.masteredCount);
+    }
+    setShowResumePrompt(false);
+  };
+
+  const startFresh = () => {
+    localStorage.removeItem(storageKey);
+    setSavedProgress(null);
+    setShowResumePrompt(false);
+  };
 
   const getCurrentQuestion = () => {
     if (isReviewMode) {
@@ -36,13 +105,9 @@ export default function LearnMode({ studySet, onBack }: Props) {
     return correctAnswer.split(',').map(a => a.trim().toUpperCase());
   };
 
-  // Parse choices from question text (looks for A., B., C., D. patterns)
-  // Works with both line-separated and inline formats (for PDF imports)
+  // Parse choices from question text
   const parseChoices = (text: string): { questionPart: string; choices: { letter: string; text: string }[] } => {
     const choices: { letter: string; text: string }[] = [];
-
-    // Try to find choices using regex that matches A. B. C. D. E. or A) B) C) D) E) patterns
-    // This regex captures each choice letter and its text until the next choice or end
     const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
 
     let match;
@@ -52,16 +117,13 @@ export default function LearnMode({ studySet, onBack }: Props) {
       const letter = match[1].toUpperCase();
       const choiceText = match[2].trim().replace(/\s+/g, ' ');
 
-      // Only add if we haven't seen this letter yet and text is not empty
       if (choiceText && !matches.find(m => m.letter === letter)) {
         matches.push({ letter, text: choiceText, index: match.index });
       }
     }
 
-    // Sort by letter to ensure A, B, C, D, E order
     matches.sort((a, b) => a.letter.localeCompare(b.letter));
 
-    // Get question part (everything before first choice)
     let questionPart = text;
     if (matches.length > 0) {
       const firstChoiceIndex = Math.min(...matches.map(m => m.index));
@@ -69,7 +131,6 @@ export default function LearnMode({ studySet, onBack }: Props) {
       choices.push(...matches.map(m => ({ letter: m.letter, text: m.text })));
     }
 
-    // Clean up question part - remove extra whitespace
     questionPart = questionPart.replace(/\s+/g, ' ').trim();
 
     return { questionPart, choices };
@@ -83,7 +144,6 @@ export default function LearnMode({ studySet, onBack }: Props) {
     if (showAnswer) return;
 
     if (isMultipleAnswer) {
-      // Multiple answer mode - toggle selection
       setSelectedAnswers(prev => {
         const index = prev.indexOf(letter);
         if (index === -1) {
@@ -93,7 +153,6 @@ export default function LearnMode({ studySet, onBack }: Props) {
         }
       });
     } else {
-      // Single answer mode - replace and check immediately
       setSelectedAnswers([letter]);
       checkAndShowAnswer([letter]);
     }
@@ -123,7 +182,6 @@ export default function LearnMode({ studySet, onBack }: Props) {
     if (selected.length === 0) return false;
     const correctArr = getCorrectAnswers(correct);
 
-    // Check if all correct answers are selected and no extras
     if (selected.length !== correctArr.length) return false;
 
     const selectedSorted = [...selected].sort();
@@ -143,6 +201,7 @@ export default function LearnMode({ studySet, onBack }: Props) {
         setWrongIndices(newWrongIndices);
 
         if (newWrongIndices.length === 0) {
+          localStorage.removeItem(storageKey);
           setIsComplete(true);
         } else if (reviewIndex >= newWrongIndices.length) {
           setReviewIndex(0);
@@ -162,6 +221,7 @@ export default function LearnMode({ studySet, onBack }: Props) {
           setIsReviewMode(true);
           setReviewIndex(0);
         } else {
+          localStorage.removeItem(storageKey);
           setIsComplete(true);
         }
       }
@@ -169,6 +229,7 @@ export default function LearnMode({ studySet, onBack }: Props) {
   };
 
   const restart = () => {
+    localStorage.removeItem(storageKey);
     setCurrentIndex(0);
     setSelectedAnswers([]);
     setShowAnswer(false);
@@ -179,6 +240,51 @@ export default function LearnMode({ studySet, onBack }: Props) {
     setMasteredCount(0);
     setIsComplete(false);
   };
+
+  // Resume prompt
+  if (showResumePrompt && savedProgress) {
+    const progressPercent = Math.round((savedProgress.masteredCount / studySet.questions.length) * 100);
+
+    return (
+      <div className="learn-mode">
+        <div className="mode-header">
+          <button className="btn-back" onClick={onBack}>
+            Exit
+          </button>
+          <span className="progress-text">Learn</span>
+        </div>
+
+        <div className="resume-prompt">
+          <div className="resume-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+          </div>
+          <h2>Continue where you left off?</h2>
+          <p>You have a learning session in progress</p>
+          <div className="resume-stats">
+            <div className="resume-stat">
+              <span className="stat-value">{savedProgress.masteredCount}</span>
+              <span className="stat-label">of {studySet.questions.length} mastered</span>
+            </div>
+            <div className="resume-stat">
+              <span className="stat-value">{progressPercent}%</span>
+              <span className="stat-label">complete</span>
+            </div>
+          </div>
+          <div className="resume-actions">
+            <button className="btn-secondary" onClick={startFresh}>
+              Start Over
+            </button>
+            <button className="btn-primary" onClick={resumeProgress}>
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isComplete) {
     return (

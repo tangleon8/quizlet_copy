@@ -122,11 +122,12 @@ function AppContent() {
         );
         setSets([...sets, created]);
       }
-    } catch (error) {
+      setView('home');
+      setCurrentSet(null);
+    } catch (error: any) {
       console.error('Failed to save set:', error);
+      alert(`Failed to save study set: ${error.message || 'Unknown error'}. Please try again.`);
     }
-    setView('home');
-    setCurrentSet(null);
   };
 
   const handleBack = () => {

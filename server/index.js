@@ -16,7 +16,9 @@ app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true
 }));
-app.use(express.json());
+// Increase payload limit for large study sets (10MB)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
 
 interface Props {
@@ -6,12 +6,75 @@ interface Props {
   onBack: () => void;
 }
 
+interface SavedQuizProgress {
+  currentIndex: number;
+  selectedAnswers: string[][];
+  timestamp: number;
+}
+
+const STORAGE_KEY_PREFIX = 'quiz_progress_';
+
 export default function QuizMode({ studySet, onBack }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<string[][]>(
     new Array(studySet.questions.length).fill(null).map(() => [])
   );
   const [showResults, setShowResults] = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [savedProgress, setSavedProgress] = useState<SavedQuizProgress | null>(null);
+
+  const storageKey = `${STORAGE_KEY_PREFIX}${studySet.id}`;
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const progress: SavedQuizProgress = JSON.parse(saved);
+        // Check if progress is valid and not too old (24 hours)
+        const isValid = progress.selectedAnswers.length === studySet.questions.length;
+        const isRecent = Date.now() - progress.timestamp < 24 * 60 * 60 * 1000;
+
+        if (isValid && isRecent) {
+          setSavedProgress(progress);
+          setShowResumePrompt(true);
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      } catch (e) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+  }, [storageKey, studySet.questions.length]);
+
+  // Save progress whenever answers change
+  useEffect(() => {
+    if (!showResults && !showResumePrompt) {
+      const hasAnyAnswers = selectedAnswers.some(a => a.length > 0);
+      if (hasAnyAnswers) {
+        const progress: SavedQuizProgress = {
+          currentIndex,
+          selectedAnswers,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(storageKey, JSON.stringify(progress));
+      }
+    }
+  }, [currentIndex, selectedAnswers, showResults, showResumePrompt, storageKey]);
+
+  const resumeProgress = () => {
+    if (savedProgress) {
+      setCurrentIndex(savedProgress.currentIndex);
+      setSelectedAnswers(savedProgress.selectedAnswers);
+    }
+    setShowResumePrompt(false);
+  };
+
+  const startFresh = () => {
+    localStorage.removeItem(storageKey);
+    setSavedProgress(null);
+    setShowResumePrompt(false);
+  };
 
   const currentQuestion = studySet.questions[currentIndex];
 
@@ -25,13 +88,9 @@ export default function QuizMode({ studySet, onBack }: Props) {
     return correctAnswer.split(',').map(a => a.trim().toUpperCase());
   };
 
-  // Parse choices from question text (looks for A., B., C., D. patterns)
-  // Works with both line-separated and inline formats (for PDF imports)
+  // Parse choices from question text
   const parseChoices = (text: string): { questionPart: string; choices: { letter: string; text: string }[] } => {
     const choices: { letter: string; text: string }[] = [];
-
-    // Try to find choices using regex that matches A. B. C. D. E. or A) B) C) D) E) patterns
-    // This regex captures each choice letter and its text until the next choice or end
     const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
 
     let match;
@@ -41,16 +100,13 @@ export default function QuizMode({ studySet, onBack }: Props) {
       const letter = match[1].toUpperCase();
       const choiceText = match[2].trim().replace(/\s+/g, ' ');
 
-      // Only add if we haven't seen this letter yet and text is not empty
       if (choiceText && !matches.find(m => m.letter === letter)) {
         matches.push({ letter, text: choiceText, index: match.index });
       }
     }
 
-    // Sort by letter to ensure A, B, C, D, E order
     matches.sort((a, b) => a.letter.localeCompare(b.letter));
 
-    // Get question part (everything before first choice)
     let questionPart = text;
     if (matches.length > 0) {
       const firstChoiceIndex = Math.min(...matches.map(m => m.index));
@@ -58,7 +114,6 @@ export default function QuizMode({ studySet, onBack }: Props) {
       choices.push(...matches.map(m => ({ letter: m.letter, text: m.text })));
     }
 
-    // Clean up question part - remove extra whitespace
     questionPart = questionPart.replace(/\s+/g, ' ').trim();
 
     return { questionPart, choices };
@@ -73,7 +128,6 @@ export default function QuizMode({ studySet, onBack }: Props) {
     const currentSelections = [...updated[currentIndex]];
 
     if (isMultipleAnswer) {
-      // Multiple answer mode - toggle selection
       const index = currentSelections.indexOf(letter);
       if (index === -1) {
         currentSelections.push(letter);
@@ -81,7 +135,6 @@ export default function QuizMode({ studySet, onBack }: Props) {
         currentSelections.splice(index, 1);
       }
     } else {
-      // Single answer mode - replace selection
       currentSelections.length = 0;
       currentSelections.push(letter);
     }
@@ -103,10 +156,13 @@ export default function QuizMode({ studySet, onBack }: Props) {
   };
 
   const submitQuiz = () => {
+    // Clear saved progress when quiz is submitted
+    localStorage.removeItem(storageKey);
     setShowResults(true);
   };
 
   const retake = () => {
+    localStorage.removeItem(storageKey);
     setCurrentIndex(0);
     setSelectedAnswers(new Array(studySet.questions.length).fill(null).map(() => []));
     setShowResults(false);
@@ -116,7 +172,6 @@ export default function QuizMode({ studySet, onBack }: Props) {
     if (selected.length === 0) return false;
     const correctArr = getCorrectAnswers(correct);
 
-    // Check if all correct answers are selected and no extras
     if (selected.length !== correctArr.length) return false;
 
     const selectedSorted = [...selected].sort();
@@ -134,6 +189,52 @@ export default function QuizMode({ studySet, onBack }: Props) {
     });
     return correct;
   };
+
+  // Resume prompt
+  if (showResumePrompt && savedProgress) {
+    const answeredCount = savedProgress.selectedAnswers.filter(a => a.length > 0).length;
+    const progressPercent = Math.round((answeredCount / studySet.questions.length) * 100);
+
+    return (
+      <div className="quiz-mode">
+        <div className="mode-header">
+          <button className="btn-back" onClick={onBack}>
+            Exit
+          </button>
+          <span className="progress-text">Test</span>
+        </div>
+
+        <div className="resume-prompt">
+          <div className="resume-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h2>Continue where you left off?</h2>
+          <p>You have a quiz in progress</p>
+          <div className="resume-stats">
+            <div className="resume-stat">
+              <span className="stat-value">{answeredCount}</span>
+              <span className="stat-label">of {studySet.questions.length} answered</span>
+            </div>
+            <div className="resume-stat">
+              <span className="stat-value">{progressPercent}%</span>
+              <span className="stat-label">complete</span>
+            </div>
+          </div>
+          <div className="resume-actions">
+            <button className="btn-secondary" onClick={startFresh}>
+              Start Over
+            </button>
+            <button className="btn-primary" onClick={resumeProgress}>
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showResults) {
     const score = calculateScore();
