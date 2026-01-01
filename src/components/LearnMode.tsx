@@ -17,6 +17,36 @@ interface SavedLearnProgress {
 
 const STORAGE_KEY_PREFIX = 'learn_progress_';
 
+// Format question text with bullet points on separate lines
+const formatQuestionText = (text: string): React.ReactNode => {
+  // Check if text contains bullet points
+  if (!text.includes('•')) {
+    return text;
+  }
+
+  // Split by bullet points and format
+  const parts = text.split('•').map(part => part.trim()).filter(Boolean);
+
+  if (parts.length <= 1) {
+    return text;
+  }
+
+  // First part is the main question, rest are bullet points
+  const mainQuestion = parts[0];
+  const bullets = parts.slice(1);
+
+  return (
+    <>
+      <div>{mainQuestion}</div>
+      <ul className="question-bullets">
+        {bullets.map((bullet, index) => (
+          <li key={index}>{bullet}</li>
+        ))}
+      </ul>
+    </>
+  );
+};
+
 export default function LearnMode({ studySet, onBack }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
@@ -165,11 +195,55 @@ export default function LearnMode({ studySet, onBack }: Props) {
 
     if (correct) {
       setMasteredCount((prev) => prev + 1);
+      // Auto-advance after brief feedback
+      setTimeout(() => {
+        advanceToNext(true);
+      }, 400);
     } else if (!isReviewMode) {
       const qIndex = currentIndex;
       if (!wrongIndices.includes(qIndex)) {
         setWrongIndices([...wrongIndices, qIndex]);
       }
+    }
+  };
+
+  const advanceToNext = (wasCorrect: boolean) => {
+    setSelectedAnswers([]);
+    setShowAnswer(false);
+    setIsCorrect(null);
+
+    if (isReviewMode) {
+      if (wasCorrect) {
+        setWrongIndices((prevWrong) => {
+          const newWrongIndices = prevWrong.filter((_, i) => i !== reviewIndex);
+          if (newWrongIndices.length === 0) {
+            localStorage.removeItem(storageKey);
+            setIsComplete(true);
+          } else if (reviewIndex >= newWrongIndices.length) {
+            setReviewIndex(0);
+          }
+          return newWrongIndices;
+        });
+      } else {
+        setReviewIndex((prev) =>
+          prev < wrongIndices.length - 1 ? prev + 1 : 0
+        );
+      }
+    } else {
+      setCurrentIndex((prevIndex) => {
+        if (prevIndex < studySet.questions.length - 1) {
+          return prevIndex + 1;
+        } else {
+          if (wrongIndices.length > 0) {
+            setIsReviewMode(true);
+            setReviewIndex(0);
+          } else {
+            localStorage.removeItem(storageKey);
+            setIsComplete(true);
+          }
+          return prevIndex;
+        }
+      });
     }
   };
 
@@ -191,41 +265,7 @@ export default function LearnMode({ studySet, onBack }: Props) {
   };
 
   const nextQuestion = () => {
-    setSelectedAnswers([]);
-    setShowAnswer(false);
-    setIsCorrect(null);
-
-    if (isReviewMode) {
-      if (isCorrect) {
-        const newWrongIndices = wrongIndices.filter((_, i) => i !== reviewIndex);
-        setWrongIndices(newWrongIndices);
-
-        if (newWrongIndices.length === 0) {
-          localStorage.removeItem(storageKey);
-          setIsComplete(true);
-        } else if (reviewIndex >= newWrongIndices.length) {
-          setReviewIndex(0);
-        }
-      } else {
-        if (reviewIndex < wrongIndices.length - 1) {
-          setReviewIndex(reviewIndex + 1);
-        } else {
-          setReviewIndex(0);
-        }
-      }
-    } else {
-      if (currentIndex < studySet.questions.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        if (wrongIndices.length > 0) {
-          setIsReviewMode(true);
-          setReviewIndex(0);
-        } else {
-          localStorage.removeItem(storageKey);
-          setIsComplete(true);
-        }
-      }
-    }
+    advanceToNext(false);
   };
 
   const restart = () => {
@@ -334,7 +374,7 @@ export default function LearnMode({ studySet, onBack }: Props) {
 
       <div className="question-card">
         <div className="question-content">
-          <div className="question-text">{questionPart}</div>
+          <div className="question-text">{formatQuestionText(questionPart)}</div>
           {isMultipleAnswer && !showAnswer && (
             <div className="multi-answer-hint">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

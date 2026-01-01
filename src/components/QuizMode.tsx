@@ -14,6 +14,33 @@ interface SavedQuizProgress {
 
 const STORAGE_KEY_PREFIX = 'quiz_progress_';
 
+// Format question text with bullet points on separate lines
+const formatQuestionText = (text: string): React.ReactNode => {
+  if (!text.includes('•')) {
+    return text;
+  }
+
+  const parts = text.split('•').map(part => part.trim()).filter(Boolean);
+
+  if (parts.length <= 1) {
+    return text;
+  }
+
+  const mainQuestion = parts[0];
+  const bullets = parts.slice(1);
+
+  return (
+    <>
+      <div>{mainQuestion}</div>
+      <ul className="question-bullets">
+        {bullets.map((bullet, index) => (
+          <li key={index}>{bullet}</li>
+        ))}
+      </ul>
+    </>
+  );
+};
+
 export default function QuizMode({ studySet, onBack }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<string[][]>(
@@ -315,7 +342,7 @@ export default function QuizMode({ studySet, onBack }: Props) {
 
       <div className="question-card">
         <div className="question-content">
-          <div className="question-text">{questionPart}</div>
+          <div className="question-text">{formatQuestionText(questionPart)}</div>
           {isMultipleAnswer && (
             <div className="multi-answer-hint">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
