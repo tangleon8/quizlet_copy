@@ -1539,6 +1539,11 @@ body {
   color: var(--gray);
 }
 
+.mini-content .mini-mode {
+  color: var(--blue);
+  font-weight: 500;
+}
+
 .folders-grid {
   display: flex;
   gap: 1rem;

@@ -14,12 +14,32 @@ import MatchMode from './components/MatchMode';
 import SetView from './components/SetView';
 import GamesMode from './components/GamesMode';
 
+type StudyMode = 'flashcards' | 'learn' | 'quiz' | 'match' | 'games';
+
+interface LastStudyInfo {
+  mode: StudyMode;
+  timestamp: number;
+}
+
 function AppContent() {
   const { user, loading, logout } = useAuth();
   const [sets, setSets] = useState<StudySet[]>([]);
   const [view, setView] = useState<AppView>('home');
   const [currentSet, setCurrentSet] = useState<StudySet | null>(null);
   const [loadingSets, setLoadingSets] = useState(false);
+  const [lastStudyMap, setLastStudyMap] = useState<Record<string, LastStudyInfo>>({});
+
+  // Load last study info from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('lastStudyMap');
+    if (stored) {
+      try {
+        setLastStudyMap(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse lastStudyMap:', e);
+      }
+    }
+  }, []);
 
   // Load sets from API when user logs in
   useEffect(() => {
@@ -54,6 +74,20 @@ function AppContent() {
   const handleSelectSet = (set: StudySet, mode: 'flashcards' | 'learn' | 'quiz' | 'match' | 'edit' | 'view' | 'games') => {
     setCurrentSet(set);
     setView(mode);
+
+    // Track last study mode (only for actual study modes, not edit/view)
+    const studyModes: StudyMode[] = ['flashcards', 'learn', 'quiz', 'match', 'games'];
+    if (studyModes.includes(mode as StudyMode)) {
+      const newMap = {
+        ...lastStudyMap,
+        [set.id]: {
+          mode: mode as StudyMode,
+          timestamp: Date.now(),
+        },
+      };
+      setLastStudyMap(newMap);
+      localStorage.setItem('lastStudyMap', JSON.stringify(newMap));
+    }
   };
 
   const handleDeleteSet = async (id: string) => {
@@ -143,6 +177,7 @@ function AppContent() {
             onBulkImport={handleBulkImport}
             onSelectSet={handleSelectSet}
             onDeleteSet={handleDeleteSet}
+            lastStudyMap={lastStudyMap}
           />
         )}
         {(view === 'create' || view === 'edit') && (

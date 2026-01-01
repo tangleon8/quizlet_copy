@@ -50,7 +50,7 @@ export default function BulkImport({ onSave, onCancel }: Props) {
 
       const answerRaw = answerMatch[1].toUpperCase();
       const answers = answerRaw.match(/[A-E]/g);
-      const correctAnswer = answers ? [...new Set(answers)].join(',') : answerRaw;
+      const correctAnswer = answers ? Array.from(new Set(answers)).join(',') : answerRaw;
 
       // If this isn't the first block, clean up from previous answer
       if (i > 0) {

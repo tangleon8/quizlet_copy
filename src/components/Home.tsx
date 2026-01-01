@@ -2,6 +2,12 @@ import React from 'react';
 import { StudySet } from '../types';
 
 type StudyMode = 'flashcards' | 'learn' | 'quiz' | 'match' | 'edit' | 'view' | 'games';
+type ActiveStudyMode = 'flashcards' | 'learn' | 'quiz' | 'match' | 'games';
+
+interface LastStudyInfo {
+  mode: ActiveStudyMode;
+  timestamp: number;
+}
 
 interface Props {
   sets: StudySet[];
@@ -9,9 +15,34 @@ interface Props {
   onBulkImport: () => void;
   onSelectSet: (set: StudySet, mode: StudyMode) => void;
   onDeleteSet: (id: string) => void;
+  lastStudyMap: Record<string, LastStudyInfo>;
 }
 
-export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onDeleteSet }: Props) {
+// Mode display info
+const modeInfo: Record<ActiveStudyMode, { label: string; icon: React.ReactNode }> = {
+  flashcards: {
+    label: 'Flashcards',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+  },
+  learn: {
+    label: 'Learn',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+  },
+  quiz: {
+    label: 'Test',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+  },
+  match: {
+    label: 'Match',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+  },
+  games: {
+    label: 'Games',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+  }
+};
+
+export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onDeleteSet, lastStudyMap }: Props) {
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm('Delete this study set?')) {
@@ -19,13 +50,21 @@ export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onD
     }
   };
 
+  // Get the last mode for a set, default to flashcards
+  const getLastMode = (setId: string): ActiveStudyMode => {
+    return lastStudyMap[setId]?.mode || 'flashcards';
+  };
+
   // Get recent sets (last 3 modified)
   const recentSets = [...sets]
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 3);
 
-  // Get sets that have been studied (simulated as sets with more than 5 questions)
-  const jumpBackInSets = sets.filter(s => s.questions.length >= 3).slice(0, 2);
+  // Get sets that have been studied (those with lastStudyMap entries), sorted by most recent
+  const jumpBackInSets = [...sets]
+    .filter(s => lastStudyMap[s.id])
+    .sort((a, b) => (lastStudyMap[b.id]?.timestamp || 0) - (lastStudyMap[a.id]?.timestamp || 0))
+    .slice(0, 3);
 
   return (
     <div className="home">
@@ -78,21 +117,21 @@ export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onD
                 </div>
               </div>
               <div className="sets-row">
-                {jumpBackInSets.map((set) => (
-                  <div key={set.id} className="set-card-mini" onClick={() => onSelectSet(set, 'flashcards')}>
-                    <div className="mini-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                      </svg>
+                {jumpBackInSets.map((set) => {
+                  const lastMode = getLastMode(set.id);
+                  const info = modeInfo[lastMode];
+                  return (
+                    <div key={set.id} className="set-card-mini" onClick={() => onSelectSet(set, lastMode)}>
+                      <div className="mini-icon">
+                        {info.icon}
+                      </div>
+                      <div className="mini-content">
+                        <h4>{set.title}</h4>
+                        <span className="mini-mode">{info.label}</span>
+                      </div>
                     </div>
-                    <div className="mini-content">
-                      <h4>{set.title}</h4>
-                      <span>{set.questions.length} terms</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -109,20 +148,27 @@ export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onD
               </div>
             </div>
             <div className="sets-row">
-              {recentSets.map((set) => (
-                <div key={set.id} className="set-card-mini" onClick={() => onSelectSet(set, 'flashcards')}>
-                  <div className="mini-icon blue">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    </svg>
+              {recentSets.map((set) => {
+                const lastMode = getLastMode(set.id);
+                const info = modeInfo[lastMode];
+                const hasStudied = !!lastStudyMap[set.id];
+                return (
+                  <div key={set.id} className="set-card-mini" onClick={() => onSelectSet(set, lastMode)}>
+                    <div className={`mini-icon ${hasStudied ? '' : 'blue'}`}>
+                      {hasStudied ? info.icon : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="mini-content">
+                      <h4>{set.title}</h4>
+                      <span className={hasStudied ? 'mini-mode' : ''}>{hasStudied ? info.label : `${set.questions.length} terms`}</span>
+                    </div>
                   </div>
-                  <div className="mini-content">
-                    <h4>{set.title}</h4>
-                    <span>{set.questions.length} terms</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
