@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { StudySet, AppView } from './types';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { setsAPI } from './api';
+import Auth from './components/Auth';
 import Home from './components/Home';
 import CreateEditSet from './components/CreateEditSet';
 import BulkImport from './components/BulkImport';
@@ -9,27 +12,33 @@ import LearnMode from './components/LearnMode';
 import QuizMode from './components/QuizMode';
 import MatchMode from './components/MatchMode';
 
-const STORAGE_KEY = 'quizme-sets';
-
-function App() {
+function AppContent() {
+  const { user, loading, logout } = useAuth();
   const [sets, setSets] = useState<StudySet[]>([]);
   const [view, setView] = useState<AppView>('home');
   const [currentSet, setCurrentSet] = useState<StudySet | null>(null);
+  const [loadingSets, setLoadingSets] = useState(false);
 
+  // Load sets from API when user logs in
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setSets(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load saved sets');
-      }
+    if (user) {
+      loadSets();
+    } else {
+      setSets([]);
     }
-  }, []);
+  }, [user]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
-  }, [sets]);
+  const loadSets = async () => {
+    setLoadingSets(true);
+    try {
+      const data = await setsAPI.getAll();
+      setSets(data);
+    } catch (error) {
+      console.error('Failed to load sets:', error);
+    } finally {
+      setLoadingSets(false);
+    }
+  };
 
   const handleCreateNew = () => {
     setCurrentSet(null);
@@ -45,16 +54,40 @@ function App() {
     setView(mode);
   };
 
-  const handleDeleteSet = (id: string) => {
-    setSets(sets.filter((s) => s.id !== id));
+  const handleDeleteSet = async (id: string) => {
+    try {
+      await setsAPI.delete(id);
+      setSets(sets.filter((s) => s.id !== id));
+    } catch (error) {
+      console.error('Failed to delete set:', error);
+    }
   };
 
-  const handleSaveSet = (set: StudySet) => {
-    const existing = sets.find((s) => s.id === set.id);
-    if (existing) {
-      setSets(sets.map((s) => (s.id === set.id ? set : s)));
-    } else {
-      setSets([...sets, set]);
+  const handleSaveSet = async (set: StudySet) => {
+    try {
+      const existing = sets.find((s) => s.id === set.id);
+      if (existing) {
+        const updated = await setsAPI.update(
+          set.id,
+          set.title,
+          set.questions.map((q) => ({
+            questionText: q.questionText,
+            correctAnswer: q.correctAnswer,
+          }))
+        );
+        setSets(sets.map((s) => (s.id === set.id ? updated : s)));
+      } else {
+        const created = await setsAPI.create(
+          set.title,
+          set.questions.map((q) => ({
+            questionText: q.questionText,
+            correctAnswer: q.correctAnswer,
+          }))
+        );
+        setSets([...sets, created]);
+      }
+    } catch (error) {
+      console.error('Failed to save set:', error);
     }
     setView('home');
     setCurrentSet(null);
@@ -65,13 +98,43 @@ function App() {
     setCurrentSet(null);
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="App">
+        <div className="loading-screen">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!user) {
+    return (
+      <div className="App">
+        <header className="App-header">
+          <h1>Quizlet</h1>
+        </header>
+        <main className="App-main">
+          <Auth />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
-      <header className="App-header" onClick={() => setView('home')}>
-        <h1>Quizlet</h1>
+      <header className="App-header">
+        <h1 onClick={() => setView('home')} style={{ cursor: 'pointer' }}>Quizlet</h1>
+        <div className="user-info">
+          <span>Hi, {user.name}</span>
+          <button className="btn-logout" onClick={logout}>Log out</button>
+        </div>
       </header>
       <main className="App-main">
-        {view === 'home' && (
+        {loadingSets && view === 'home' && (
+          <div className="loading-sets">Loading your sets...</div>
+        )}
+        {view === 'home' && !loadingSets && (
           <Home
             sets={sets}
             onCreateNew={handleCreateNew}
@@ -107,6 +170,14 @@ function App() {
         )}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
