@@ -33,14 +33,45 @@
   --border: #edeff4;
   --white: #ffffff;
   --sidebar-width: 260px;
-  --header-height: 60px;
+  --header-height: 64px;
+
+  /* Light mode (default) */
+  --bg-primary: #f6f7fb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #edeff4;
+  --text-primary: #1a1d28;
+  --text-secondary: #939bb4;
+  --card-bg: #ffffff;
+  --card-border: #edeff4;
+  --header-bg: linear-gradient(135deg, #1a1d28 0%, #282e3e 100%);
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d28;
+  --bg-tertiary: #282e3e;
+  --text-primary: #f6f7fb;
+  --text-secondary: #939bb4;
+  --card-bg: #1a1d28;
+  --card-border: #363c4e;
+  --border: #363c4e;
+  --gray-light: #282e3e;
+  --header-bg: linear-gradient(135deg, #0f1117 0%, #1a1d28 100%);
+  --blue-light: rgba(66, 85, 255, 0.15);
+  --green-light: rgba(35, 178, 109, 0.15);
+  --red-light: rgba(255, 114, 91, 0.15);
+  --yellow-light: rgba(255, 205, 31, 0.15);
+  --orange-light: rgba(255, 149, 0, 0.15);
+  --purple-light: rgba(168, 85, 247, 0.15);
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--gray-light);
-  color: var(--dark);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .App {
@@ -55,16 +86,31 @@ body {
 }
 
 .App-header {
-  background: linear-gradient(135deg, var(--dark) 0%, var(--dark-lighter) 100%);
+  background: var(--header-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   padding: 0 1.5rem;
   height: var(--header-height);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.App-header.hidden {
+  transform: translateY(-100%);
+  box-shadow: none;
+}
+
+.App-header.scrolled {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
 }
 
 .header-left {
@@ -212,18 +258,19 @@ body {
   display: flex;
   flex: 1;
   min-height: calc(100vh - var(--header-height));
+  margin-top: var(--header-height);
 }
 
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: var(--sidebar-width);
-  background: white;
+  background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   padding: 1.5rem 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  transition: width 0.2s, padding 0.2s;
+  transition: width 0.2s, padding 0.2s, background-color 0.3s;
 }
 
 .sidebar.closed {
@@ -246,7 +293,7 @@ body {
   border: none;
   background: transparent;
   border-radius: 0.5rem;
-  color: var(--dark);
+  color: var(--text-primary);
   font-size: 0.9375rem;
   cursor: pointer;
   transition: all 0.15s;
@@ -295,7 +342,7 @@ body {
   border: none;
   background: transparent;
   border-radius: 0.5rem;
-  color: var(--dark);
+  color: var(--text-primary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s;
@@ -347,7 +394,7 @@ body {
   border: none;
   background: transparent;
   border-radius: 0.5rem;
-  color: var(--dark);
+  color: var(--text-primary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s;
@@ -633,10 +680,11 @@ body {
 }
 
 .set-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 0.5rem;
   padding: 1.25rem;
   border: 1px solid var(--border);
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .set-card:hover {
@@ -716,9 +764,10 @@ body {
 
 /* ===== FORMS ===== */
 .create-edit-set, .bulk-import {
-  background: white;
+  background: var(--card-bg);
   border-radius: 0.5rem;
   border: 1px solid var(--border);
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .form-header {
@@ -1092,9 +1141,10 @@ body {
 
 /* ===== STUDY MODES ===== */
 .quiz-mode, .learn-mode, .flashcard-mode, .match-mode {
-  background: white;
+  background: var(--card-bg);
   border-radius: 0.5rem;
   border: 1px solid var(--border);
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .mode-header {
