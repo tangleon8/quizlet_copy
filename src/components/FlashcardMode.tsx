@@ -12,21 +12,55 @@ export default function FlashcardMode({ studySet, onBack }: Props) {
 
   const currentQuestion = studySet.questions[currentIndex];
 
-  // Parse to get just the question part (without choices)
-  const parseQuestion = (text: string): string => {
-    const lines = text.split('\n');
-    let questionPart = '';
+  // Parse choices from question text (looks for A., B., C., D. patterns)
+  // Works with both line-separated and inline formats (for PDF imports)
+  const parseChoices = (text: string): { questionPart: string; choices: { letter: string; text: string }[] } => {
+    const choices: { letter: string; text: string }[] = [];
 
-    for (const line of lines) {
-      const match = line.match(/^[A-E][.)]\s*.+/);
-      if (match) break;
-      questionPart += line + '\n';
+    // Try to find choices using regex that matches A. B. C. D. E. or A) B) C) D) E) patterns
+    const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
+
+    let match;
+    const matches: { letter: string; text: string; index: number }[] = [];
+
+    while ((match = choiceRegex.exec(text)) !== null) {
+      const letter = match[1].toUpperCase();
+      const choiceText = match[2].trim().replace(/\s+/g, ' ');
+
+      if (choiceText && !matches.find(m => m.letter === letter)) {
+        matches.push({ letter, text: choiceText, index: match.index });
+      }
     }
 
-    return questionPart.trim();
+    matches.sort((a, b) => a.letter.localeCompare(b.letter));
+
+    let questionPart = text;
+    if (matches.length > 0) {
+      const firstChoiceIndex = Math.min(...matches.map(m => m.index));
+      questionPart = text.substring(0, firstChoiceIndex).trim();
+      choices.push(...matches.map(m => ({ letter: m.letter, text: m.text })));
+    }
+
+    questionPart = questionPart.replace(/\s+/g, ' ').trim();
+
+    return { questionPart, choices };
   };
 
-  const questionText = parseQuestion(currentQuestion.questionText);
+  const { questionPart, choices } = parseChoices(currentQuestion.questionText);
+
+  // Get the correct answer text(s)
+  const getAnswerDisplay = () => {
+    const correctLetters = currentQuestion.correctAnswer.split(',').map(a => a.trim().toUpperCase());
+
+    if (choices.length > 0) {
+      const correctChoices = choices.filter(c => correctLetters.includes(c.letter));
+      if (correctChoices.length > 0) {
+        return correctChoices.map(c => `${c.letter}. ${c.text}`).join('\n\n');
+      }
+    }
+
+    return currentQuestion.correctAnswer;
+  };
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
@@ -80,12 +114,24 @@ export default function FlashcardMode({ studySet, onBack }: Props) {
           <div className="flashcard-inner">
             <div className="flashcard-front">
               <span className="flashcard-label">Question</span>
-              <div className="flashcard-content">{questionText}</div>
+              <div className="flashcard-content">
+                <div className="flashcard-question">{questionPart}</div>
+                {choices.length > 0 && (
+                  <div className="flashcard-choices">
+                    {choices.map(c => (
+                      <div key={c.letter} className="flashcard-choice">
+                        <span className="flashcard-choice-letter">{c.letter}.</span>
+                        <span>{c.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <span className="flashcard-hint">Click to reveal answer</span>
             </div>
             <div className="flashcard-back">
               <span className="flashcard-label">Answer</span>
-              <div className="flashcard-content">{currentQuestion.correctAnswer}</div>
+              <div className="flashcard-content flashcard-answer">{getAnswerDisplay()}</div>
               <span className="flashcard-hint">Click to see question</span>
             </div>
           </div>

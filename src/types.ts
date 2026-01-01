@@ -12,4 +12,22 @@ export interface StudySet {
   updatedAt: number;
 }
 
-export type AppView = 'home' | 'create' | 'edit' | 'import' | 'flashcards' | 'learn' | 'quiz' | 'match';
+// Progress tracking for study sessions
+export interface QuestionProgress {
+  questionId: string;
+  correct: boolean;
+  attempts: number;
+  lastAttempt: number;
+}
+
+export interface StudyProgress {
+  setId: string;
+  mode: 'learn' | 'quiz';
+  currentIndex: number;
+  questionProgress: QuestionProgress[];
+  startedAt: number;
+  lastUpdated: number;
+  completed: boolean;
+}
+
+export type AppView = 'home' | 'create' | 'edit' | 'import' | 'flashcards' | 'learn' | 'quiz' | 'match' | 'view' | 'games';

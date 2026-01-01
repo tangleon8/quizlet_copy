@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { StudySet } from '../types';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist';
 
-// Set worker source
-GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+// Set worker source for v3.x
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 interface Props {
   onSave: (set: StudySet) => void;
@@ -31,62 +31,44 @@ export default function BulkImport({ onSave, onCancel }: Props) {
   const parseQuestions = (text: string): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
 
+    // Remove explanation sections first (everything from "Explanation:" to next question or end)
+    let cleanedText = text.replace(/Explanation:[\s\S]*?(?=Question:|$)/gi, '\n');
+
+    // Also remove "Reference:" sections
+    cleanedText = cleanedText.replace(/Reference:[\s\S]*?(?=Question:|Answer:|$)/gi, '\n');
+
     // Split by "Answer:" to find question blocks
-    // Pattern: Question text with choices, followed by "Answer: X" or "Answer: A, C" for multiple
+    const parts = cleanedText.split(/Answer[s]?:\s*/i);
 
-    // Regex to match each question block
-    // Looks for text followed by choices (A. B. C. D.) and then Answer: X (supports multiple like A, C or AC)
-    const questionPattern = /([^]*?(?:A[.)][^]*?B[.)][^]*?C[.)][^]*?D[.)][^]*?))Answer[s]?:\s*([A-E](?:\s*[,&and\s]+\s*[A-E])*)/gi;
+    for (let i = 0; i < parts.length - 1; i++) {
+      let questionBlock = parts[i];
+      const answerPart = parts[i + 1];
 
-    let match;
-    while ((match = questionPattern.exec(text)) !== null) {
-      const questionText = match[1].trim();
-      // Extract all answer letters and normalize to comma-separated uppercase
-      const answerRaw = match[2].toUpperCase();
+      // Get all answer letters (supports multiple like "A, C" or "AC" or "DE" or "A and C")
+      const answerMatch = answerPart.match(/^([A-E]+(?:\s*[,&and\s]+\s*[A-E])*)/i);
+      if (!answerMatch) continue;
+
+      const answerRaw = answerMatch[1].toUpperCase();
       const answers = answerRaw.match(/[A-E]/g);
-      const correctAnswer = answers ? answers.join(',') : answerRaw;
+      const correctAnswer = answers ? [...new Set(answers)].join(',') : answerRaw;
 
-      if (questionText) {
+      // If this isn't the first block, clean up from previous answer
+      if (i > 0) {
+        // Remove leading answer letters and explanation remnants from previous question
+        questionBlock = questionBlock.replace(/^[A-E]+\s*/i, '').trim();
+      }
+
+      // Remove "Question: X" prefix if present
+      questionBlock = questionBlock.replace(/^Question:\s*\d*\s*/i, '').trim();
+
+      // Clean up the question text
+      questionBlock = questionBlock.trim();
+
+      if (questionBlock && questionBlock.length > 10) {
         questions.push({
-          questionText,
+          questionText: questionBlock,
           correctAnswer
         });
-      }
-    }
-
-    // Alternative parsing if the regex didn't work well
-    if (questions.length === 0) {
-      // Try splitting by "Answer:" and working backwards
-      const parts = text.split(/Answer[s]?:\s*/i);
-
-      for (let i = 0; i < parts.length - 1; i++) {
-        let questionBlock = parts[i];
-        const answerPart = parts[i + 1];
-
-        // Get all answer letters (supports multiple like "A, C" or "AC" or "A and C")
-        const answerMatch = answerPart.match(/^([A-E](?:\s*[,&and\s]+\s*[A-E])*)/i);
-        if (!answerMatch) continue;
-
-        const answerRaw = answerMatch[1].toUpperCase();
-        const answers = answerRaw.match(/[A-E]/g);
-        const correctAnswer = answers ? answers.join(',') : answerRaw;
-
-        // If this isn't the first block, we need to extract just this question
-        // The previous answer might be at the start of this block
-        if (i > 0) {
-          // Remove any leading answer letters from previous question
-          questionBlock = questionBlock.replace(/^[A-E](?:\s*,\s*[A-E])*\s*/i, '').trim();
-        }
-
-        // Clean up the question text
-        questionBlock = questionBlock.trim();
-
-        if (questionBlock && questionBlock.length > 10) {
-          questions.push({
-            questionText: questionBlock,
-            correctAnswer
-          });
-        }
       }
     }
 
@@ -126,7 +108,7 @@ export default function BulkImport({ onSave, onCancel }: Props) {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await getDocument({ data: arrayBuffer }).promise;
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
       let fullText = '';
 

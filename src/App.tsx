@@ -11,6 +11,8 @@ import FlashcardMode from './components/FlashcardMode';
 import LearnMode from './components/LearnMode';
 import QuizMode from './components/QuizMode';
 import MatchMode from './components/MatchMode';
+import SetView from './components/SetView';
+import GamesMode from './components/GamesMode';
 
 function AppContent() {
   const { user, loading, logout } = useAuth();
@@ -49,7 +51,7 @@ function AppContent() {
     setView('import');
   };
 
-  const handleSelectSet = (set: StudySet, mode: 'flashcards' | 'learn' | 'quiz' | 'match' | 'edit') => {
+  const handleSelectSet = (set: StudySet, mode: 'flashcards' | 'learn' | 'quiz' | 'match' | 'edit' | 'view' | 'games') => {
     setCurrentSet(set);
     setView(mode);
   };
@@ -167,6 +169,12 @@ function AppContent() {
         )}
         {view === 'match' && currentSet && (
           <MatchMode studySet={currentSet} onBack={handleBack} />
+        )}
+        {view === 'view' && currentSet && (
+          <SetView studySet={currentSet} onBack={handleBack} />
+        )}
+        {view === 'games' && currentSet && (
+          <GamesMode studySet={currentSet} onBack={handleBack} />
         )}
       </main>
     </div>

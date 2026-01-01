@@ -23,17 +23,21 @@ export default function MatchMode({ studySet, onBack }: Props) {
   const [isStarted, setIsStarted] = useState(false);
 
   // Parse to get just the question part (without choices)
+  // Works with both line-separated and inline formats (for PDF imports)
   const parseQuestion = (text: string): string => {
-    const lines = text.split('\n');
-    let questionPart = '';
+    // Find the first choice pattern to know where the question ends
+    const choiceMatch = text.match(/[A-E][.)]\s/);
 
-    for (const line of lines) {
-      const match = line.match(/^[A-E][.)]\s*.+/);
-      if (match) break;
-      questionPart += line + '\n';
+    let questionPart = text;
+    if (choiceMatch && choiceMatch.index) {
+      questionPart = text.substring(0, choiceMatch.index);
     }
 
-    return questionPart.trim().substring(0, 60) + (questionPart.length > 60 ? '...' : '');
+    // Clean up whitespace
+    questionPart = questionPart.replace(/\s+/g, ' ').trim();
+
+    // Truncate for display
+    return questionPart.substring(0, 80) + (questionPart.length > 80 ? '...' : '');
   };
 
   const initializeGame = useCallback(() => {

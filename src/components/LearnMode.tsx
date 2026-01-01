@@ -37,28 +37,42 @@ export default function LearnMode({ studySet, onBack }: Props) {
   };
 
   // Parse choices from question text (looks for A., B., C., D. patterns)
+  // Works with both line-separated and inline formats (for PDF imports)
   const parseChoices = (text: string): { questionPart: string; choices: { letter: string; text: string }[] } => {
-    const lines = text.split('\n');
     const choices: { letter: string; text: string }[] = [];
-    let questionPart = '';
-    let foundChoice = false;
 
-    for (const line of lines) {
-      const match = line.match(/^([A-E])[.)]\s*(.+)/);
-      if (match) {
-        foundChoice = true;
-        choices.push({ letter: match[1], text: match[2].trim() });
-      } else if (!foundChoice) {
-        questionPart += line + '\n';
-      } else {
-        // Continue previous choice if it's a multi-line choice
-        if (choices.length > 0) {
-          choices[choices.length - 1].text += ' ' + line.trim();
-        }
+    // Try to find choices using regex that matches A. B. C. D. E. or A) B) C) D) E) patterns
+    // This regex captures each choice letter and its text until the next choice or end
+    const choiceRegex = /([A-E])[.)]\s*([\s\S]*?)(?=(?:[A-E][.)]\s)|$)/gi;
+
+    let match;
+    const matches: { letter: string; text: string; index: number }[] = [];
+
+    while ((match = choiceRegex.exec(text)) !== null) {
+      const letter = match[1].toUpperCase();
+      const choiceText = match[2].trim().replace(/\s+/g, ' ');
+
+      // Only add if we haven't seen this letter yet and text is not empty
+      if (choiceText && !matches.find(m => m.letter === letter)) {
+        matches.push({ letter, text: choiceText, index: match.index });
       }
     }
 
-    return { questionPart: questionPart.trim(), choices };
+    // Sort by letter to ensure A, B, C, D, E order
+    matches.sort((a, b) => a.letter.localeCompare(b.letter));
+
+    // Get question part (everything before first choice)
+    let questionPart = text;
+    if (matches.length > 0) {
+      const firstChoiceIndex = Math.min(...matches.map(m => m.index));
+      questionPart = text.substring(0, firstChoiceIndex).trim();
+      choices.push(...matches.map(m => ({ letter: m.letter, text: m.text })));
+    }
+
+    // Clean up question part - remove extra whitespace
+    questionPart = questionPart.replace(/\s+/g, ' ').trim();
+
+    return { questionPart, choices };
   };
 
   const { questionPart, choices } = parseChoices(currentQuestion.questionText);
