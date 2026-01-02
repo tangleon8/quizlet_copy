@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { StudySet, AppView } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -24,6 +24,7 @@ interface LastStudyInfo {
 }
 
 const SETTINGS_KEY = 'study_settings';
+const THEME_KEY = 'theme_preference';
 
 function AppContent() {
   const { user, loading, logout } = useAuth();
@@ -36,6 +37,39 @@ function AppContent() {
   const [showStudyConfig, setShowStudyConfig] = useState(false);
   const [pendingMode, setPendingMode] = useState<StudyMode | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved === 'dark';
+  });
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Apply dark mode on mount and when it changes
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem(THEME_KEY, darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  // Scroll handler for hiding header
+  const handleScroll = useCallback(() => {
+    const currentScrollY = window.scrollY;
+    const scrollThreshold = 60;
+
+    if (currentScrollY < scrollThreshold) {
+      setHeaderHidden(false);
+    } else if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
+      setHeaderHidden(true);
+    } else if (currentScrollY < lastScrollY) {
+      setHeaderHidden(false);
+    }
+
+    setLastScrollY(currentScrollY);
+  }, [lastScrollY]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   // Load last study info from localStorage
   useEffect(() => {
@@ -222,7 +256,7 @@ function AppContent() {
   return (
     <div className="App app-with-sidebar">
       {/* Header */}
-      <header className="App-header">
+      <header className={`App-header ${headerHidden ? 'hidden' : ''} ${lastScrollY > 20 ? 'scrolled' : ''}`}>
         <div className="header-left">
           <button className="btn-menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,6 +282,29 @@ function AppContent() {
         </div>
 
         <div className="header-right">
+          <button
+            className="btn-theme-toggle"
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            )}
+          </button>
           <button className="btn-header-action" onClick={handleBulkImport} title="Import">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
