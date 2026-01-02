@@ -15,6 +15,8 @@ import SetView from './components/SetView';
 import GamesMode from './components/GamesMode';
 import Settings from './components/Settings';
 import StudyConfig from './components/StudyConfig';
+import WelcomeModal from './components/WelcomeModal';
+import TutorialOverlay from './components/TutorialOverlay';
 
 type StudyMode = 'flashcards' | 'learn' | 'quiz' | 'match' | 'games';
 
@@ -25,6 +27,9 @@ interface LastStudyInfo {
 
 const SETTINGS_KEY = 'study_settings';
 const THEME_KEY = 'theme_preference';
+const ONBOARDING_COMPLETE_KEY = 'onboarding_complete';
+const TUTORIAL_COMPLETE_KEY = 'tutorial_complete';
+const WELCOME_BACK_DISMISSED_KEY = 'welcome_back_dismissed';
 
 function AppContent() {
   const { user, loading, logout } = useAuth();
@@ -44,6 +49,11 @@ function AppContent() {
   const [headerHidden, setHeaderHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [quickActionSetId, setQuickActionSetId] = useState<string>('');
+
+  // Onboarding state
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
 
   // Apply dark mode on mount and when it changes
   useEffect(() => {
@@ -98,11 +108,69 @@ function AppContent() {
     try {
       const data = await setsAPI.getAll();
       setSets(data);
+      return data;
     } catch (error) {
       console.error('Failed to load sets:', error);
+      return [];
     } finally {
       setLoadingSets(false);
     }
+  };
+
+  // Onboarding logic - check if user is new or returning
+  useEffect(() => {
+    if (!user || loadingSets) return;
+
+    const onboardingComplete = localStorage.getItem(ONBOARDING_COMPLETE_KEY);
+    const welcomeBackDismissed = localStorage.getItem(WELCOME_BACK_DISMISSED_KEY);
+
+    // New user: show welcome modal
+    if (!onboardingComplete && sets.length === 0) {
+      setShowWelcomeModal(true);
+    }
+    // Returning user with sets: show welcome back banner (if not dismissed this session)
+    else if (sets.length > 0 && !welcomeBackDismissed) {
+      setShowWelcomeBack(true);
+    }
+  }, [user, sets, loadingSets]);
+
+  // Handlers for onboarding flow
+  const handleWelcomeCreateSet = () => {
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    setShowWelcomeModal(false);
+    handleCreateNew();
+  };
+
+  const handleWelcomeImport = () => {
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    setShowWelcomeModal(false);
+    handleBulkImport();
+  };
+
+  const handleStartTutorial = () => {
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    setShowWelcomeModal(false);
+    setShowTutorial(true);
+  };
+
+  const handleCloseWelcome = () => {
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    setShowWelcomeModal(false);
+  };
+
+  const handleTutorialComplete = () => {
+    localStorage.setItem(TUTORIAL_COMPLETE_KEY, 'true');
+    setShowTutorial(false);
+  };
+
+  const handleTutorialSkip = () => {
+    localStorage.setItem(TUTORIAL_COMPLETE_KEY, 'true');
+    setShowTutorial(false);
+  };
+
+  const handleDismissWelcomeBack = () => {
+    localStorage.setItem(WELCOME_BACK_DISMISSED_KEY, 'true');
+    setShowWelcomeBack(false);
   };
 
   const handleCreateNew = () => {
@@ -513,6 +581,9 @@ function AppContent() {
               onSelectSet={handleSelectSet}
               onDeleteSet={handleDeleteSet}
               lastStudyMap={lastStudyMap}
+              showWelcomeBack={showWelcomeBack}
+              onDismissWelcomeBack={handleDismissWelcomeBack}
+              userName={user?.name}
             />
           )}
           {(view === 'create' || view === 'edit') && (
@@ -558,6 +629,25 @@ function AppContent() {
           mode={pendingMode}
           onStart={handleStudyConfigStart}
           onCancel={handleStudyConfigCancel}
+        />
+      )}
+
+      {/* Onboarding: Welcome Modal for new users */}
+      {showWelcomeModal && (
+        <WelcomeModal
+          userName={user?.name || ''}
+          onCreateSet={handleWelcomeCreateSet}
+          onImportQuestions={handleWelcomeImport}
+          onStartTutorial={handleStartTutorial}
+          onClose={handleCloseWelcome}
+        />
+      )}
+
+      {/* Onboarding: Tutorial overlay */}
+      {showTutorial && (
+        <TutorialOverlay
+          onComplete={handleTutorialComplete}
+          onSkip={handleTutorialSkip}
         />
       )}
     </div>

@@ -16,6 +16,9 @@ interface Props {
   onSelectSet: (set: StudySet, mode: StudyMode) => void;
   onDeleteSet: (id: string) => void;
   lastStudyMap: Record<string, LastStudyInfo>;
+  showWelcomeBack?: boolean;
+  onDismissWelcomeBack?: () => void;
+  userName?: string;
 }
 
 // Mode display info
@@ -42,7 +45,7 @@ const modeInfo: Record<ActiveStudyMode, { label: string; icon: React.ReactNode }
   }
 };
 
-export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onDeleteSet, lastStudyMap }: Props) {
+export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onDeleteSet, lastStudyMap, showWelcomeBack, onDismissWelcomeBack, userName }: Props) {
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (window.confirm('Delete this study set?')) {
@@ -70,25 +73,26 @@ export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onD
   const getRandomSet = () => sets.length > 0 ? sets[Math.floor(Math.random() * sets.length)] : null;
   const suggestedSet = getRandomSet();
 
+  // Get first name for personalized greeting
+  const firstName = userName?.split(' ')[0] || '';
+
   return (
     <div className="home">
-      {/* Welcome Banner */}
-      <div className="welcome-banner">
-        <div className="welcome-content">
-          <h1>Welcome back!</h1>
-          <p>Ready to continue learning? Pick up where you left off or try something new.</p>
+      {/* Welcome Back Banner - dismissible for returning users */}
+      {showWelcomeBack && sets.length > 0 && (
+        <div className="welcome-back-banner">
+          <div className="welcome-back-content">
+            <h2>Welcome back{firstName ? `, ${firstName}` : ''}!</h2>
+            <p>Ready to continue learning? Pick up where you left off.</p>
+          </div>
+          <button className="welcome-back-dismiss" onClick={onDismissWelcomeBack} aria-label="Dismiss">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
-        <div className="welcome-illustration">
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-            <circle cx="60" cy="60" r="50" fill="#edefff"/>
-            <path d="M40 45h40v35a5 5 0 01-5 5H45a5 5 0 01-5-5V45z" fill="#4255ff"/>
-            <path d="M45 35h30a5 5 0 015 5v5H40v-5a5 5 0 015-5z" fill="#423ed8"/>
-            <rect x="50" y="55" width="20" height="3" rx="1.5" fill="white"/>
-            <rect x="50" y="63" width="15" height="3" rx="1.5" fill="white" opacity="0.7"/>
-            <rect x="50" y="71" width="18" height="3" rx="1.5" fill="white" opacity="0.5"/>
-          </svg>
-        </div>
-      </div>
+      )}
 
       {/* Suggestions */}
       {sets.length > 0 && (
@@ -167,17 +171,96 @@ export default function Home({ sets, onCreateNew, onBulkImport, onSelectSet, onD
       )}
 
       {sets.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">📚</div>
-          <h3>No study sets yet</h3>
-          <p>Create your first set or import questions</p>
-          <div className="empty-buttons">
-            <button className="btn-create-large" onClick={onCreateNew}>
-              Create set
-            </button>
-            <button className="btn-import-large" onClick={onBulkImport}>
-              Import questions
-            </button>
+        <div className="empty-state-container">
+          {/* Main empty state card */}
+          <div className="empty-state-card">
+            <div className="empty-state-illustration">
+              <div className="empty-illustration-bg"></div>
+              <svg className="empty-illustration-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <div className="empty-sparkle s1">+</div>
+              <div className="empty-sparkle s2">+</div>
+            </div>
+            <h2>Your study journey starts here</h2>
+            <p>Create your first study set to start learning with flashcards, quizzes, games, and more.</p>
+            <div className="empty-state-actions">
+              <button className="empty-btn primary" onClick={onCreateNew}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create your first set
+              </button>
+              <button className="empty-btn secondary" onClick={onBulkImport}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Import from PDF
+              </button>
+            </div>
+          </div>
+
+          {/* Feature cards */}
+          <div className="empty-features-grid">
+            <div className="empty-feature-card">
+              <div className="empty-feature-icon flashcards">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+              </div>
+              <h4>Flashcards</h4>
+              <p>Flip through cards to memorize terms and definitions</p>
+            </div>
+            <div className="empty-feature-card">
+              <div className="empty-feature-icon learn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                </svg>
+              </div>
+              <h4>Learn Mode</h4>
+              <p>Type answers to reinforce your knowledge</p>
+            </div>
+            <div className="empty-feature-card">
+              <div className="empty-feature-icon quiz">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <h4>Quizzes</h4>
+              <p>Test yourself with multiple choice questions</p>
+            </div>
+            <div className="empty-feature-card">
+              <div className="empty-feature-icon games">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polygon points="10 8 16 12 10 16 10 8"/>
+                </svg>
+              </div>
+              <h4>Games</h4>
+              <p>Make learning fun with interactive games</p>
+            </div>
+          </div>
+
+          {/* Tips section */}
+          <div className="empty-tips">
+            <div className="tip-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </div>
+            <div className="tip-content">
+              <strong>Pro tip:</strong> Import questions from a PDF to quickly create study sets from your notes or textbooks.
+            </div>
           </div>
         </div>
       ) : (
