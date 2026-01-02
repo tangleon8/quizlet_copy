@@ -109,7 +109,9 @@ export default function Auth() {
   const handleSocialLogin = (provider: string) => {
     if (provider === 'Google') {
       // Redirect to backend Google OAuth endpoint
-      const backendURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      // Remove '/api' suffix to get base URL for OAuth
+      const backendURL = apiUrl.replace(/\/api$/, '');
       window.location.href = `${backendURL}/api/auth/google`;
     } else {
       setError(`${provider} login coming soon! Please use email for now.`);
