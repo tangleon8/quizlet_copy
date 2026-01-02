@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 type AuthView = 'login' | 'register' | 'forgot-password' | 'verify-email' | 'reset-sent';
@@ -15,6 +15,17 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+
+  // Check for OAuth error in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthError = urlParams.get('error');
+    if (oauthError === 'oauth_failed') {
+      setError('Google sign-in failed. Please try again or use email login.');
+      // Clean up the URL
+      window.history.replaceState({}, document.title, '/');
+    }
+  }, []);
 
   const { login, register, forgotPassword, resendVerification } = useAuth();
 
@@ -96,9 +107,13 @@ export default function Auth() {
   };
 
   const handleSocialLogin = (provider: string) => {
-    // In a real app, this would redirect to OAuth provider
-    // For now, show a message that it's coming soon
-    setError(`${provider} login coming soon! Please use email for now.`);
+    if (provider === 'Google') {
+      // Redirect to backend Google OAuth endpoint
+      const backendURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      window.location.href = `${backendURL}/api/auth/google`;
+    } else {
+      setError(`${provider} login coming soon! Please use email for now.`);
+    }
   };
 
   const switchToLogin = () => {

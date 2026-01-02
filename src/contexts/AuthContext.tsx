@@ -42,6 +42,18 @@ export function AuthProvider({ children }: Props) {
   useEffect(() => {
     // Check if user is logged in on mount
     const checkAuth = async () => {
+      // Check for OAuth callback token in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const oauthToken = urlParams.get('token');
+      const isOAuthCallback = window.location.pathname === '/oauth-callback';
+
+      if (isOAuthCallback && oauthToken) {
+        // Store the token from OAuth callback
+        localStorage.setItem('token', oauthToken);
+        // Clean up the URL
+        window.history.replaceState({}, document.title, '/');
+      }
+
       const token = localStorage.getItem('token');
       if (token) {
         try {
