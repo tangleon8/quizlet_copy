@@ -460,8 +460,8 @@ body {
 /* ===== MAIN CONTENT ===== */
 .app-body .App-main {
   flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
+  padding: 1.5rem;
+  max-width: 100%;
   overflow-y: auto;
 }
 
@@ -483,8 +483,8 @@ body {
 
 /* Legacy standalone main */
 .App:not(.app-with-sidebar) .App-main {
-  padding: 2rem;
-  max-width: 900px;
+  padding: 1.5rem;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -522,7 +522,7 @@ body {
 .suggestions-section h3 {
   font-size: 1rem;
   margin-bottom: 1rem;
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .suggestion-cards {
@@ -587,7 +587,7 @@ body {
   display: block;
   font-weight: 600;
   font-size: 0.9375rem;
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .suggestion-set {
@@ -641,8 +641,8 @@ body {
 }
 
 .btn-import {
-  background: white;
-  color: var(--dark);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border);
 }
 
@@ -696,8 +696,8 @@ body {
 }
 
 .btn-import-large {
-  background: white;
-  color: var(--dark);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border);
 }
 
@@ -779,7 +779,7 @@ body {
 
 .set-card-actions button:hover {
   background: var(--gray-light);
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .set-card-actions button.delete {
@@ -797,6 +797,8 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
+  width: 100%;
+  max-width: 100%;
 }
 
 .form-header {
@@ -968,6 +970,8 @@ body {
   border: 1px solid var(--border);
   border-radius: 0.25rem;
   font-size: 0.875rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .questions-form {
@@ -1060,7 +1064,7 @@ body {
 }
 
 .format-example {
-  background: white;
+  background: var(--bg-secondary);
   padding: 1rem;
   border-radius: 0.375rem;
   font-size: 0.8125rem;
@@ -1129,7 +1133,7 @@ body {
   border-radius: 0.25rem;
   font-size: 0.75rem;
   cursor: pointer;
-  background: white;
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   color: var(--gray);
 }
@@ -1183,6 +1187,8 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
+  width: 100%;
+  max-width: 100%;
 }
 
 .mode-header {
@@ -1220,7 +1226,7 @@ body {
 }
 
 .question-card {
-  padding: 2rem 1.5rem;
+  padding: 1.5rem;
 }
 
 .question-text {
@@ -1353,7 +1359,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   background: var(--gray-light);
-  color: var(--dark);
+  color: var(--text-primary);
   border: none;
 }
 
@@ -1512,7 +1518,7 @@ body {
   font-size: 0.8125rem;
   white-space: pre-wrap;
   margin-bottom: 0.375rem;
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .your-answer {
@@ -1561,8 +1567,8 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  background: white;
-  color: var(--dark);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border);
 }
 
@@ -1587,7 +1593,7 @@ body {
 
 /* ===== FLASHCARDS ===== */
 .flashcard-container {
-  padding: 2rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1595,8 +1601,8 @@ body {
 
 .flashcard {
   width: 100%;
-  max-width: 500px;
-  height: 300px;
+  max-width: 800px;
+  height: 400px;
   perspective: 1000px;
   cursor: pointer;
   margin-bottom: 1.5rem;
@@ -1705,7 +1711,7 @@ body {
 
 /* ===== MATCH GAME ===== */
 .match-container {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .match-header {
@@ -1731,7 +1737,7 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.75rem;
-  max-width: 600px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -1807,7 +1813,7 @@ body {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 640px) {
   .App-main {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
   .home-header {
@@ -1851,7 +1857,8 @@ body {
   }
 
   .flashcard {
-    height: 250px;
+    height: 300px;
+    max-width: 100%;
   }
 
   .match-grid {
@@ -2028,7 +2035,7 @@ body {
 }
 
 .password-toggle:hover {
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .auth-divider {
@@ -2082,7 +2089,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .section-title svg {
@@ -2110,7 +2117,7 @@ body {
 
 .btn-add-folder:hover {
   background: var(--gray-light);
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 .sets-row {
@@ -2124,7 +2131,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: white;
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
@@ -2182,7 +2189,7 @@ body {
 }
 
 .folder-card {
-  background: white;
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 1.25rem;
@@ -2261,6 +2268,8 @@ body {
   border: 1px solid var(--border);
   border-radius: 0.25rem;
   font-size: 0.875rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .custom-count-input:focus {
@@ -2326,7 +2335,7 @@ body {
 }
 
 .import-tab:hover {
-  background: white;
+  background: var(--bg-secondary);
   border-color: var(--border);
 }
 
@@ -2373,7 +2382,7 @@ body {
 .pdf-dropzone p {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--dark);
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
@@ -2487,6 +2496,8 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
+  width: 100%;
+  max-width: 100%;
 }
 
 .set-view-controls {
@@ -2651,7 +2662,7 @@ body {
 }
 
 .answer-value {
-  color: var(--dark);
+  color: var(--text-primary);
 }
 
 /* ===== GAMES MODE ===== */
@@ -2660,6 +2671,8 @@ body {
   border-radius: 0.5rem;
   border: 1px solid var(--border);
   transition: background-color 0.3s, border-color 0.3s;
+  width: 100%;
+  max-width: 100%;
 }
 
 .games-menu {
@@ -2676,7 +2689,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
-  max-width: 700px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -2796,7 +2809,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: white;
+  background: var(--bg-secondary);
   border: 2px solid var(--border);
   border-radius: 0.5rem;
   cursor: pointer;
@@ -2892,7 +2905,7 @@ body {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--blue);
-  background: white;
+  background: var(--bg-secondary);
   padding: 1rem;
   border-radius: 0.5rem;
 }
@@ -2974,12 +2987,13 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: var(--card-bg);
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   text-align: center;
   max-width: 80%;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  color: var(--text-primary);
 }
 
 .word-text {
@@ -3016,6 +3030,8 @@ body {
   text-align: center;
   text-transform: uppercase;
   font-weight: 600;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .gravity-input input:focus {
@@ -3337,7 +3353,7 @@ body {
 }
 
 .study-config-modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 1rem;
   width: 100%;
   max-width: 500px;
@@ -3395,10 +3411,11 @@ body {
   padding: 0.5rem 1rem;
   border: 2px solid var(--border);
   border-radius: 2rem;
-  background: white;
+  background: var(--bg-secondary);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s;
+  color: var(--text-primary);
 }
 
 .preset-chip:hover {
@@ -3436,6 +3453,8 @@ body {
   border-radius: 0.5rem;
   font-size: 1rem;
   text-align: center;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .range-input-group input:focus {
@@ -3544,9 +3563,9 @@ body {
 
 /* Apply safe areas to main content */
 .App-main {
-  padding-bottom: calc(2rem + var(--safe-area-inset-bottom));
-  padding-left: calc(2rem + var(--safe-area-inset-left));
-  padding-right: calc(2rem + var(--safe-area-inset-right));
+  padding-bottom: calc(1.5rem + var(--safe-area-inset-bottom));
+  padding-left: calc(1.5rem + var(--safe-area-inset-left));
+  padding-right: calc(1.5rem + var(--safe-area-inset-right));
 }
 
 /* Sidebar safe area */
