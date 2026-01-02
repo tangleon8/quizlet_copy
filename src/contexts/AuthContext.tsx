@@ -5,14 +5,20 @@ interface User {
   id: string;
   email: string;
   name: string;
+  emailVerified?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<{ requiresVerification: boolean }>;
   logout: () => void;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
+  socialLogin: (provider: string, accessToken: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -59,7 +65,12 @@ export function AuthProvider({ children }: Props) {
 
   const register = async (email: string, password: string, name: string) => {
     const data = await authAPI.register(email, password, name);
+    // If email verification is required, don't set user yet
+    if (data.requiresVerification) {
+      return { requiresVerification: true };
+    }
     setUser(data.user);
+    return { requiresVerification: false };
   };
 
   const logout = () => {
@@ -67,8 +78,43 @@ export function AuthProvider({ children }: Props) {
     setUser(null);
   };
 
+  const forgotPassword = async (email: string) => {
+    await authAPI.forgotPassword(email);
+  };
+
+  const resetPassword = async (token: string, password: string) => {
+    await authAPI.resetPassword(token, password);
+  };
+
+  const verifyEmail = async (token: string) => {
+    const data = await authAPI.verifyEmail(token);
+    if (data.user) {
+      setUser(data.user);
+    }
+  };
+
+  const resendVerification = async (email: string) => {
+    await authAPI.resendVerification(email);
+  };
+
+  const socialLogin = async (provider: string, accessToken: string) => {
+    const data = await authAPI.socialLogin(provider, accessToken);
+    setUser(data.user);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      forgotPassword,
+      resetPassword,
+      verifyEmail,
+      resendVerification,
+      socialLogin,
+    }}>
       {children}
     </AuthContext.Provider>
   );

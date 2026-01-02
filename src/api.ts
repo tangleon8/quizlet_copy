@@ -55,6 +55,47 @@ export const authAPI = {
   getMe: async () => {
     return fetchWithAuth('/auth/me');
   },
+
+  forgotPassword: async (email: string) => {
+    return fetchWithAuth('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    return fetchWithAuth('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  },
+
+  verifyEmail: async (token: string) => {
+    const data = await fetchWithAuth('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+    }
+    return data;
+  },
+
+  resendVerification: async (email: string) => {
+    return fetchWithAuth('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  socialLogin: async (provider: string, accessToken: string) => {
+    const data = await fetchWithAuth('/auth/social-login', {
+      method: 'POST',
+      body: JSON.stringify({ provider, accessToken }),
+    });
+    localStorage.setItem('token', data.token);
+    return data;
+  },
 };
 
 // Study Sets API
