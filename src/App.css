@@ -457,6 +457,43 @@ body {
   color: var(--orange);
 }
 
+.quick-icon.quiz {
+  background: var(--purple-light);
+  color: var(--purple);
+}
+
+.quick-icon.match {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+/* Quick Action Set Selector */
+.quick-action-set-selector {
+  padding: 0 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.quick-action-set-selector select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.quick-action-set-selector select:hover {
+  border-color: var(--blue);
+}
+
+.quick-action-set-selector select:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
 /* ===== MAIN CONTENT ===== */
 .app-body .App-main {
   flex: 1;

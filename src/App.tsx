@@ -43,6 +43,7 @@ function AppContent() {
   });
   const [headerHidden, setHeaderHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [quickActionSetId, setQuickActionSetId] = useState<string>('');
 
   // Apply dark mode on mount and when it changes
   useEffect(() => {
@@ -395,52 +396,103 @@ function AppContent() {
             </div>
           </div>
 
-          <div className="sidebar-section">
-            <h4>Quick Actions</h4>
-            <div className="quick-actions">
-              {sets.length > 0 && (
-                <>
-                  <button
-                    className="quick-action"
-                    onClick={() => sets[0] && handleSelectSet(sets[0], 'flashcards')}
-                  >
-                    <div className="quick-icon flashcards">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2"/>
-                        <line x1="8" y1="21" x2="16" y2="21"/>
-                        <line x1="12" y1="17" x2="12" y2="21"/>
-                      </svg>
-                    </div>
-                    <span>Flashcards</span>
-                  </button>
-                  <button
-                    className="quick-action"
-                    onClick={() => sets[0] && handleSelectSet(sets[0], 'learn')}
-                  >
-                    <div className="quick-icon learn">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                      </svg>
-                    </div>
-                    <span>Learn</span>
-                  </button>
-                  <button
-                    className="quick-action"
-                    onClick={() => sets[0] && handleSelectSet(sets[0], 'games')}
-                  >
-                    <div className="quick-icon games">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polygon points="10 8 16 12 10 16 10 8"/>
-                      </svg>
-                    </div>
-                    <span>Games</span>
-                  </button>
-                </>
-              )}
+          {sets.length > 0 && (
+            <div className="sidebar-section">
+              <h4>Quick Actions</h4>
+              <div className="quick-action-set-selector">
+                <select
+                  value={quickActionSetId || sets[0]?.id || ''}
+                  onChange={(e) => setQuickActionSetId(e.target.value)}
+                >
+                  {sets.map((set) => (
+                    <option key={set.id} value={set.id}>
+                      {set.title} ({set.questions.length})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="quick-actions">
+                <button
+                  className="quick-action"
+                  onClick={() => {
+                    const set = sets.find(s => s.id === (quickActionSetId || sets[0]?.id));
+                    if (set) handleSelectSet(set, 'flashcards');
+                  }}
+                >
+                  <div className="quick-icon flashcards">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2"/>
+                      <line x1="8" y1="21" x2="16" y2="21"/>
+                      <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                  </div>
+                  <span>Flashcards</span>
+                </button>
+                <button
+                  className="quick-action"
+                  onClick={() => {
+                    const set = sets.find(s => s.id === (quickActionSetId || sets[0]?.id));
+                    if (set) handleSelectSet(set, 'learn');
+                  }}
+                >
+                  <div className="quick-icon learn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                  </div>
+                  <span>Learn</span>
+                </button>
+                <button
+                  className="quick-action"
+                  onClick={() => {
+                    const set = sets.find(s => s.id === (quickActionSetId || sets[0]?.id));
+                    if (set) handleSelectSet(set, 'quiz');
+                  }}
+                >
+                  <div className="quick-icon quiz">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 11l3 3L22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                  </div>
+                  <span>Quiz</span>
+                </button>
+                <button
+                  className="quick-action"
+                  onClick={() => {
+                    const set = sets.find(s => s.id === (quickActionSetId || sets[0]?.id));
+                    if (set) handleSelectSet(set, 'match');
+                  }}
+                >
+                  <div className="quick-icon match">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="7" height="7"/>
+                      <rect x="14" y="3" width="7" height="7"/>
+                      <rect x="14" y="14" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                  </div>
+                  <span>Match</span>
+                </button>
+                <button
+                  className="quick-action"
+                  onClick={() => {
+                    const set = sets.find(s => s.id === (quickActionSetId || sets[0]?.id));
+                    if (set) handleSelectSet(set, 'games');
+                  }}
+                >
+                  <div className="quick-icon games">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polygon points="10 8 16 12 10 16 10 8"/>
+                    </svg>
+                  </div>
+                  <span>Games</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </aside>
 
         {/* Sidebar overlay for mobile */}
