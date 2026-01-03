@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-type AuthView = 'login' | 'register' | 'forgot-password' | 'verify-email' | 'reset-sent';
+type AuthView = 'login' | 'register' | 'forgot-password' | 'verify-email' | 'reset-sent' | 'privacy' | 'terms';
+
+// Password requirements checker
+const checkPasswordRequirements = (password: string) => ({
+  minLength: password.length >= 8,
+  hasUppercase: /[A-Z]/.test(password),
+  hasLowercase: /[a-z]/.test(password),
+  hasNumber: /[0-9]/.test(password),
+});
 
 export default function Auth() {
   const [view, setView] = useState<AuthView>('login');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
@@ -15,6 +24,10 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const passwordReqs = checkPasswordRequirements(password);
+  const allPasswordReqsMet = Object.values(passwordReqs).every(Boolean);
 
   // Check for OAuth error in URL
   useEffect(() => {
@@ -22,7 +35,6 @@ export default function Auth() {
     const oauthError = urlParams.get('error');
     if (oauthError === 'oauth_failed') {
       setError('Google sign-in failed. Please try again or use email login.');
-      // Clean up the URL
       window.history.replaceState({}, document.title, '/');
     }
   }, []);
@@ -43,20 +55,45 @@ export default function Auth() {
     }
   };
 
+  const validateUsername = (username: string): string | null => {
+    if (username.length < 3) return 'Username must be at least 3 characters';
+    if (username.length > 20) return 'Username must be 20 characters or less';
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores';
+    return null;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    // Validate name
     if (!name.trim()) {
       setError('Please enter your name');
       return;
     }
+
+    // Validate username
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+      setError(usernameError);
+      return;
+    }
+
+    // Validate password requirements
+    if (!allPasswordReqsMet) {
+      setError('Please meet all password requirements');
+      return;
+    }
+
+    // Check password match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+
+    // Check terms agreement
+    if (!agreedToTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy');
       return;
     }
 
@@ -108,9 +145,7 @@ export default function Auth() {
 
   const handleSocialLogin = (provider: string) => {
     if (provider === 'Google') {
-      // Redirect to backend Google OAuth endpoint
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      // Remove '/api' suffix to get base URL for OAuth
       const backendURL = apiUrl.replace(/\/api$/, '');
       window.location.href = `${backendURL}/api/auth/google`;
     } else {
@@ -133,6 +168,153 @@ export default function Auth() {
     setPassword('');
     setConfirmPassword('');
   };
+
+  // Privacy Policy View
+  if (view === 'privacy') {
+    return (
+      <div className="auth-container">
+        <div className="auth-card auth-card-legal">
+          <button className="legal-back-btn" onClick={switchToLogin}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Back
+          </button>
+          <div className="legal-header">
+            <h1>Privacy Policy</h1>
+            <p className="legal-updated">Last updated: January 2026</p>
+          </div>
+          <div className="legal-content">
+            <section>
+              <h2>1. Information We Collect</h2>
+              <p>When you create an account, we collect:</p>
+              <ul>
+                <li><strong>Account Information:</strong> Your name, email address, username, and password (encrypted).</li>
+                <li><strong>Study Data:</strong> The study sets, questions, and answers you create.</li>
+                <li><strong>Usage Data:</strong> How you interact with Questly, including study progress and preferences.</li>
+              </ul>
+            </section>
+            <section>
+              <h2>2. How We Use Your Information</h2>
+              <p>We use your information to:</p>
+              <ul>
+                <li>Provide and improve our study platform</li>
+                <li>Save your study sets and track your progress</li>
+                <li>Send important account notifications</li>
+                <li>Respond to your support requests</li>
+              </ul>
+            </section>
+            <section>
+              <h2>3. Data Security</h2>
+              <p>We take security seriously:</p>
+              <ul>
+                <li>Passwords are encrypted using industry-standard hashing</li>
+                <li>All data is transmitted over secure HTTPS connections</li>
+                <li>We regularly review our security practices</li>
+              </ul>
+            </section>
+            <section>
+              <h2>4. Data Sharing</h2>
+              <p>We do not sell your personal information. We may share data only:</p>
+              <ul>
+                <li>With your consent</li>
+                <li>To comply with legal obligations</li>
+                <li>To protect our rights and safety</li>
+              </ul>
+            </section>
+            <section>
+              <h2>5. Your Rights</h2>
+              <p>You have the right to:</p>
+              <ul>
+                <li>Access your personal data</li>
+                <li>Delete your account and associated data</li>
+                <li>Export your study sets</li>
+                <li>Opt out of non-essential communications</li>
+              </ul>
+            </section>
+            <section>
+              <h2>6. Contact Us</h2>
+              <p>If you have questions about this Privacy Policy, please contact us at support@questly.app</p>
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Terms of Service View
+  if (view === 'terms') {
+    return (
+      <div className="auth-container">
+        <div className="auth-card auth-card-legal">
+          <button className="legal-back-btn" onClick={switchToLogin}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Back
+          </button>
+          <div className="legal-header">
+            <h1>Terms of Service</h1>
+            <p className="legal-updated">Last updated: January 2026</p>
+          </div>
+          <div className="legal-content">
+            <section>
+              <h2>1. Acceptance of Terms</h2>
+              <p>By accessing or using Questly, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our service.</p>
+            </section>
+            <section>
+              <h2>2. Description of Service</h2>
+              <p>Questly is an online study platform that allows users to create, share, and study question sets using various study modes including flashcards, quizzes, and games.</p>
+            </section>
+            <section>
+              <h2>3. User Accounts</h2>
+              <ul>
+                <li>You must provide accurate information when creating an account</li>
+                <li>You are responsible for maintaining the security of your account</li>
+                <li>You must be at least 13 years old to use Questly</li>
+                <li>One person may not maintain more than one account</li>
+              </ul>
+            </section>
+            <section>
+              <h2>4. User Content</h2>
+              <p>You retain ownership of the study sets you create. By using Questly, you grant us a license to store and display your content to provide our services. You agree not to upload content that:</p>
+              <ul>
+                <li>Infringes on intellectual property rights</li>
+                <li>Contains harmful, offensive, or illegal material</li>
+                <li>Violates any applicable laws</li>
+              </ul>
+            </section>
+            <section>
+              <h2>5. Acceptable Use</h2>
+              <p>You agree not to:</p>
+              <ul>
+                <li>Use Questly for any unlawful purpose</li>
+                <li>Attempt to gain unauthorized access to our systems</li>
+                <li>Interfere with the proper functioning of the service</li>
+                <li>Scrape or collect user data without permission</li>
+              </ul>
+            </section>
+            <section>
+              <h2>6. Termination</h2>
+              <p>We reserve the right to suspend or terminate accounts that violate these terms. You may delete your account at any time through your account settings.</p>
+            </section>
+            <section>
+              <h2>7. Disclaimer</h2>
+              <p>Questly is provided "as is" without warranties of any kind. We do not guarantee that the service will be uninterrupted or error-free.</p>
+            </section>
+            <section>
+              <h2>8. Changes to Terms</h2>
+              <p>We may update these terms from time to time. Continued use of Questly after changes constitutes acceptance of the new terms.</p>
+            </section>
+            <section>
+              <h2>9. Contact</h2>
+              <p>For questions about these Terms of Service, contact us at support@questly.app</p>
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Verify Email View
   if (view === 'verify-email') {
@@ -274,22 +456,21 @@ export default function Auth() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-logo">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            </svg>
+        {/* Enhanced Header with Questly Branding */}
+        <div className="auth-header auth-header-branded">
+          <div className="auth-brand">
+            <img src="/Questly.png" alt="Questly" className="auth-brand-logo" />
+            <span className="auth-brand-name">Questly</span>
           </div>
-          <h2>{view === 'login' ? 'Welcome back' : 'Create an account'}</h2>
+          <h2>{view === 'login' ? 'Welcome back!' : 'Create your account'}</h2>
           <p className="auth-subtitle">
             {view === 'login'
-              ? 'Log in to access your study sets'
-              : 'Sign up to start creating study sets'}
+              ? 'Sign in to continue your learning journey'
+              : 'Join thousands of students mastering their studies'}
           </p>
         </div>
 
-        {/* Social Login Buttons */}
+        {/* Social Login - Only Google for now */}
         <div className="social-login-buttons">
           <button className="btn-social btn-google" onClick={() => handleSocialLogin('Google')}>
             <svg width="18" height="18" viewBox="0 0 24 24">
@@ -300,27 +481,6 @@ export default function Auth() {
             </svg>
             Continue with Google
           </button>
-          <button className="btn-social btn-apple" onClick={() => handleSocialLogin('Apple')}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-            </svg>
-            Continue with Apple
-          </button>
-          <button className="btn-social btn-github" onClick={() => handleSocialLogin('GitHub')}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-            </svg>
-            Continue with GitHub
-          </button>
-          <button className="btn-social btn-microsoft" onClick={() => handleSocialLogin('Microsoft')}>
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="#F25022" d="M1 1h10v10H1z"/>
-              <path fill="#00A4EF" d="M1 13h10v10H1z"/>
-              <path fill="#7FBA00" d="M13 1h10v10H13z"/>
-              <path fill="#FFB900" d="M13 13h10v10H13z"/>
-            </svg>
-            Continue with Microsoft
-          </button>
         </div>
 
         <div className="auth-divider">
@@ -329,22 +489,43 @@ export default function Auth() {
 
         <form onSubmit={view === 'login' ? handleLogin : handleRegister}>
           {view === 'register' && (
-            <div className="form-group">
-              <label>Name</label>
-              <div className="input-wrapper">
-                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  required={view === 'register'}
-                />
+            <>
+              <div className="form-group">
+                <label>Full Name</label>
+                <div className="input-wrapper">
+                  <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+
+              <div className="form-group">
+                <label>Username</label>
+                <div className="input-wrapper">
+                  <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    placeholder="Choose a username"
+                    required
+                    maxLength={20}
+                  />
+                </div>
+                <p className="input-hint">3-20 characters, letters, numbers, and underscores only</p>
+              </div>
+            </>
           )}
 
           <div className="form-group">
@@ -386,9 +567,8 @@ export default function Auth() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={view === 'login' ? 'Enter your password' : 'Create a password'}
                 required
-                minLength={6}
               />
               <button
                 type="button"
@@ -409,44 +589,112 @@ export default function Auth() {
                 )}
               </button>
             </div>
+
+            {/* Password Requirements - Only show on register */}
+            {view === 'register' && password.length > 0 && (
+              <div className="password-requirements">
+                <div className={`req-item ${passwordReqs.minLength ? 'met' : ''}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {passwordReqs.minLength ? (
+                      <polyline points="20 6 9 17 4 12"/>
+                    ) : (
+                      <circle cx="12" cy="12" r="10"/>
+                    )}
+                  </svg>
+                  <span>At least 8 characters</span>
+                </div>
+                <div className={`req-item ${passwordReqs.hasUppercase ? 'met' : ''}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {passwordReqs.hasUppercase ? (
+                      <polyline points="20 6 9 17 4 12"/>
+                    ) : (
+                      <circle cx="12" cy="12" r="10"/>
+                    )}
+                  </svg>
+                  <span>One uppercase letter</span>
+                </div>
+                <div className={`req-item ${passwordReqs.hasLowercase ? 'met' : ''}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {passwordReqs.hasLowercase ? (
+                      <polyline points="20 6 9 17 4 12"/>
+                    ) : (
+                      <circle cx="12" cy="12" r="10"/>
+                    )}
+                  </svg>
+                  <span>One lowercase letter</span>
+                </div>
+                <div className={`req-item ${passwordReqs.hasNumber ? 'met' : ''}`}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {passwordReqs.hasNumber ? (
+                      <polyline points="20 6 9 17 4 12"/>
+                    ) : (
+                      <circle cx="12" cy="12" r="10"/>
+                    )}
+                  </svg>
+                  <span>One number</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {view === 'register' && (
-            <div className="form-group">
-              <label>Confirm Password</label>
-              <div className="input-wrapper">
-                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your password"
-                  required={view === 'register'}
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  tabIndex={-1}
-                >
-                  {showConfirmPassword ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  )}
-                </button>
+            <>
+              <div className="form-group">
+                <label>Confirm Password</label>
+                <div className="input-wrapper">
+                  <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="input-error">Passwords do not match</p>
+                )}
               </div>
-            </div>
+
+              {/* Terms Agreement Checkbox */}
+              <div className="terms-checkbox">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  />
+                  <span className="checkbox-custom"></span>
+                  <span className="checkbox-text">
+                    I agree to the{' '}
+                    <button type="button" onClick={() => setView('terms')}>Terms of Service</button>
+                    {' '}and{' '}
+                    <button type="button" onClick={() => setView('privacy')}>Privacy Policy</button>
+                  </span>
+                </label>
+              </div>
+            </>
           )}
 
           {error && <div className="auth-error">{error}</div>}
@@ -455,7 +703,7 @@ export default function Auth() {
             {loading ? (
               <span className="loading-spinner"></span>
             ) : view === 'login' ? (
-              'Log in'
+              'Sign in'
             ) : (
               'Create account'
             )}
@@ -471,16 +719,18 @@ export default function Auth() {
           ) : (
             <p>
               Already have an account?{' '}
-              <button onClick={switchToLogin}>Log in</button>
+              <button onClick={switchToLogin}>Sign in</button>
             </p>
           )}
         </div>
 
-        <p className="auth-terms">
-          By continuing, you agree to our{' '}
-          <a href="/terms">Terms of Service</a> and{' '}
-          <a href="/privacy">Privacy Policy</a>
-        </p>
+        {view === 'login' && (
+          <p className="auth-terms">
+            By signing in, you agree to our{' '}
+            <button type="button" onClick={() => setView('terms')}>Terms of Service</button> and{' '}
+            <button type="button" onClick={() => setView('privacy')}>Privacy Policy</button>
+          </p>
+        )}
       </div>
     </div>
   );
