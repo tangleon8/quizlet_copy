@@ -13,6 +13,7 @@ const checkPasswordRequirements = (password: string) => ({
 
 export default function Auth() {
   const [view, setView] = useState<AuthView>('login');
+  const [previousView, setPreviousView] = useState<AuthView>('login');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -169,12 +170,21 @@ export default function Auth() {
     setConfirmPassword('');
   };
 
+  const goToLegalPage = (page: 'privacy' | 'terms') => {
+    setPreviousView(view);
+    setView(page);
+  };
+
+  const goBackFromLegal = () => {
+    setView(previousView);
+  };
+
   // Privacy Policy View
   if (view === 'privacy') {
     return (
       <div className="auth-container">
         <div className="auth-card auth-card-legal">
-          <button className="legal-back-btn" onClick={switchToLogin}>
+          <button className="legal-back-btn" onClick={goBackFromLegal}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
@@ -247,7 +257,7 @@ export default function Auth() {
     return (
       <div className="auth-container">
         <div className="auth-card auth-card-legal">
-          <button className="legal-back-btn" onClick={switchToLogin}>
+          <button className="legal-back-btn" onClick={goBackFromLegal}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
@@ -688,9 +698,9 @@ export default function Auth() {
                   <span className="checkbox-custom"></span>
                   <span className="checkbox-text">
                     I agree to the{' '}
-                    <button type="button" onClick={() => setView('terms')}>Terms of Service</button>
+                    <button type="button" onClick={() => goToLegalPage('terms')}>Terms of Service</button>
                     {' '}and{' '}
-                    <button type="button" onClick={() => setView('privacy')}>Privacy Policy</button>
+                    <button type="button" onClick={() => goToLegalPage('privacy')}>Privacy Policy</button>
                   </span>
                 </label>
               </div>
@@ -727,8 +737,8 @@ export default function Auth() {
         {view === 'login' && (
           <p className="auth-terms">
             By signing in, you agree to our{' '}
-            <button type="button" onClick={() => setView('terms')}>Terms of Service</button> and{' '}
-            <button type="button" onClick={() => setView('privacy')}>Privacy Policy</button>
+            <button type="button" onClick={() => goToLegalPage('terms')}>Terms of Service</button> and{' '}
+            <button type="button" onClick={() => goToLegalPage('privacy')}>Privacy Policy</button>
           </p>
         )}
       </div>

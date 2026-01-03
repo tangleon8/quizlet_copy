@@ -306,13 +306,8 @@ function AppContent() {
   // Show login if not authenticated
   if (!user) {
     return (
-      <div className="App">
-        <header className="App-header">
-          <h1>Questly</h1>
-        </header>
-        <main className="App-main">
-          <Auth />
-        </main>
+      <div className="App auth-page">
+        <Auth />
       </div>
     );
   }
