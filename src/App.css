@@ -78,6 +78,15 @@ body {
   min-height: 100vh;
 }
 
+/* Auth page - no fixed header */
+.App.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: 2rem 1rem;
+}
+
 /* ===== NEW HEADER ===== */
 .app-with-sidebar {
   display: flex;
@@ -1916,7 +1925,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
+  width: 100%;
+  max-width: 100%;
 }
 
 .auth-card {
