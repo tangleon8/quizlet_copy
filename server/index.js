@@ -16,23 +16,18 @@ const app = express();
 connectDB();
 
 // Middleware - CORS configuration
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://questly-eight-smoky.vercel.app',
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(null, false);
-  },
-  credentials: true
+  origin: [
+    'http://localhost:3000',
+    'https://questly-eight-smoky.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Initialize Passport
 app.use(passport.initialize());
